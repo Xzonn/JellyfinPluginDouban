@@ -1,0 +1,20 @@
+[
+  {
+    "category": "Metadata",
+    "guid": "f962a752-15e8-4a43-b42a-6d9cfba35ce1",
+    "name": "Douban",
+    "description": "Provide Movie/TV metadata from Douban",
+    "owner": "Xzonn",
+    "overview": "Douban Metadata Provider for Jellyfin",
+    "versions": [
+      {
+        "checksum": "B727A31C59E815FB63FB21C1463C7E26",
+        "changelog": "Initial commit",
+        "targetAbi": "10.8.0.0",
+        "sourceUrl": "https://xzonn.top/JellyfinPluginDouban/Jellyfin.Plugin.Douban.1.0.0.0.zip",
+        "timestamp": "2023-11-02T13:00:00Z",
+        "version": "1.0.0.0"
+      }
+    ]
+  }
+]
