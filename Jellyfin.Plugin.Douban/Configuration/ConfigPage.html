@@ -1,24 +1,64 @@
 ﻿<!DOCTYPE html>
 
 <html lang="zh-cn" xmlns="http://www.w3.org/1999/xhtml">
-<head>
-    <meta charset="utf-8"/>
-    <title>Douban</title>
-</head>
-<body>
-<div class="page type-interior pluginConfigurationPage" data-require="emby-input,emby-button,emby-select,emby-checkbox" data-role="page" id="doubanConfigurationPage">
-    <div data-role="content">
-        <div class="content-primary">
-            <form id="doubanConfigurationForm">
-            </form>
-        </div>
-    </div>
 
-    <script type="text/javascript">
-        (function () {
-            var pluginId = "f962a752-15e8-4a43-b42a-6d9cfba35ce1";
-        })();
-    </script>
-</div>
-</body>
+    <head>
+        <meta charset="utf-8" />
+        <title>豆瓣设置</title>
+    </head>
+
+    <body>
+        <div class="page type-interior pluginConfigurationPage" data-require="emby-input,emby-button,emby-select,emby-checkbox" data-role="page"
+            id="doubanConfigurationPage">
+            <div data-role="content">
+                <div class="content-primary">
+                    <form id="doubanConfigurationForm">
+                        <div class="inputContainer">
+                            <label class="inputeLabel inputLabelUnfocused" for="Cookie">Cookie</label>
+                            <input id="Cookie" name="Cookie" type="text" is="emby-input" />
+                            <div class="fieldDescription">豆瓣登录状态的 Cookie。</div>
+                        </div>
+                        <div class="inputContainer">
+                            <label class="inputeLabel inputLabelUnfocused" for="RequestTimeSpan">请求时间间隔</label>
+                            <input id="RequestTimeSpan" name="RequestTimeSpan" type="number" is="emby-input" />
+                            <div class="fieldDescription">每两次请求之间的时间间隔（毫秒）。</div>
+                        </div>
+                        <div>
+                            <button is="emby-button" type="submit" class="raised button-submit block emby-button">
+                                <span>保存</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <script type="text/javascript">
+                (() => {
+                    var pluginId = "f962a752-15e8-4a43-b42a-6d9cfba35ce1";
+
+                    $("#doubanConfigurationPage").on("pageshow", () => {
+                        Dashboard.showLoadingMsg();
+                        ApiClient.getPluginConfiguration(pluginId).then((config) => {
+                            $("#Cookie").val(config.Cookie).change();
+                            $("#RequestTimeSpan").val(config.RequestTimeSpan).change();
+                            Dashboard.hideLoadingMsg();
+                        });
+                    });
+
+                    $("#doubanConfigurationPage").on("submit", (event) => {
+                        event.preventDefault();
+                        Dashboard.showLoadingMsg();
+                        ApiClient.getPluginConfiguration(pluginId).then((config) => {
+                            config.Cookie = $("#Cookie").val();
+                            config.RequestTimeSpan = parseInt($("#RequestTimeSpan").val());
+                            ApiClient.updatePluginConfiguration(pluginId, config).then(function (result) {
+                                Dashboard.processPluginConfigurationUpdateResult(result);
+                            });
+                        });
+                    });
+                })();
+            </script>
+        </div>
+    </body>
+
 </html>

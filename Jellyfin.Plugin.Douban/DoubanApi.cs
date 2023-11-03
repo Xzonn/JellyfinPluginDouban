@@ -8,52 +8,49 @@ using MediaBrowser.Model.Providers;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using Jellyfin.Plugin.Douban.Configuration;
+using System.Web;
 
 namespace Jellyfin.Plugin.Douban;
 
 public class DoubanApi
 {
-    private static readonly JsonSerializerOptions Options = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-    };
+    private struct Cache {
+        public string content;
+        public DateTime time;
+    }
 
     private readonly HttpClient _httpClient;
     public HttpClient GetHttpClient() => _httpClient;
     private readonly ILogger<DoubanApi> _log;
-    private DateTime _lastSearch;
-    private TimeSpan _timeSpan;
+    private DateTime _lastSearch = DateTime.MinValue;
+    private readonly TimeSpan _timeSpan;
+    private readonly DateTime _cacheLastClean;
+    private readonly Dictionary<string, Cache> _caches;
 
     public DoubanApi(IHttpClientFactory httpClientFactory, ILogger<DoubanApi> log)
     {
+        var Configuration = new PluginConfiguration();
+        if (Plugin.Instance != null) { Configuration = Plugin.Instance.Configuration; }
+
         _httpClient = httpClientFactory.CreateClient();
         _httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
         _httpClient.DefaultRequestHeaders.Add("Referer", "https://www.douban.com/");
+        _httpClient.DefaultRequestHeaders.Add("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8");
+        _httpClient.DefaultRequestHeaders.Add("Cookie", Configuration.Cookie);
         _httpClient.Timeout = TimeSpan.FromSeconds(5);
         _log = log;
-        _lastSearch = DateTime.MinValue;
-        _timeSpan = TimeSpan.FromMilliseconds(1500);
+        _timeSpan = TimeSpan.FromMilliseconds(Configuration.RequestTimeSpan);
+        _cacheLastClean = DateTime.Now;
+        _caches = new Dictionary<string, Cache>();
     }
-
-    private static Plugin Plugin => Plugin.Instance!;
 
     public async Task<List<ApiMovieSubject>> SearchMovie(string keyword, CancellationToken token = default)
     {
         _log.LogInformation($"Searching movie: {keyword}");
         string url = $"https://www.douban.com/search?cat=1002&q={Uri.EscapeDataString(keyword)}";
-
-        if (DateTime.Now - _lastSearch < _timeSpan)
-        {
-            await Task.Delay(_timeSpan - (DateTime.Now - _lastSearch), token).ConfigureAwait(false);
-        }
-        HttpResponseMessage response = await _httpClient.GetAsync(url, token).ConfigureAwait(false);
-        if (!response.IsSuccessStatusCode)
-        {
-            _log.LogError($"Response: {response.StatusCode}");
-            return new List<ApiMovieSubject>();
-        }
-        string responseText = await response.Content.ReadAsStringAsync(token);
-        _lastSearch = DateTime.Now;
+        string? responseText = await FetchUrl(url, token);
+        if (string.IsNullOrEmpty(responseText)) { return new List<ApiMovieSubject>(); }
         var htmlDoc = new HtmlDocument();
         htmlDoc.LoadHtml(responseText);
 
@@ -86,7 +83,7 @@ public class DoubanApi
                 Year = Convert.ToInt32(year),
             };
         }).ToList();
-        _log.LogInformation($"{results.Count} result(s) found.");
+        _log.LogInformation($"{results.Count} result(s) found");
         return results;
     }
 
@@ -162,22 +159,13 @@ public class DoubanApi
     {
         _log.LogInformation($"Fetching movie: {sid}");
         string url = $"https://movie.douban.com/subject/{sid}/";
-
-        if (DateTime.Now - _lastSearch < _timeSpan)
-        {
-            await Task.Delay(_timeSpan - (DateTime.Now - _lastSearch), token).ConfigureAwait(false);
-        }
-        HttpResponseMessage response = await _httpClient.GetAsync(url, token).ConfigureAwait(false);
-        if (!response.IsSuccessStatusCode)
-        {
-            _log.LogError($"Response: {response.StatusCode}");
-            return new ApiMovieSubject();
-        }
-        string responseText = await response.Content.ReadAsStringAsync(token);
+        string? responseText = await FetchUrl(url, token);
+        if (string.IsNullOrEmpty(responseText)) { return new ApiMovieSubject(); }
         var htmlDoc = new HtmlDocument();
         htmlDoc.LoadHtml(responseText);
 
-        var name = Regex.Replace(htmlDoc.QuerySelector("title").InnerText.Trim(), @" \(豆瓣\)$", "");
+        var name = HttpUtility.HtmlDecode(Regex.Replace(htmlDoc.QuerySelector("title").InnerText.Trim(), @" \(豆瓣\)$", ""));
+        _log.LogInformation($"Sid {sid} is: {name}");
         var content = htmlDoc.QuerySelector("#content");
         var posterId = Regex.Match(content.QuerySelector("#mainpic img").Attributes["src"].Value, @"/(p\d+)\.(?:webp|png|jpg|jpeg|gif)$").Groups[1].Value;
         var originalName = content.QuerySelector("h1 span").InnerText.Replace(name, "").Trim();
@@ -188,7 +176,7 @@ public class DoubanApi
         var type = "电影";
         if (info.ContainsKey("集数") || info.ContainsKey("单集片长")) { type = "电视剧"; }
         var intro = string.Join("\n", content.QuerySelector("#link-report-intra span").InnerText.Trim().Split("\n").Select(_ => _.Trim()));
-        var screenTime = info!.GetValueOrDefault("上映日期", "")!.Split("/").Select(_ => Regex.Replace(_.Trim(), @"\(.+?\)?$", "")).FirstOrDefault();
+        var screenTime = info!.GetValueOrDefault("上映日期", "")!.Split("/").Select(_ => Regex.Replace(_.Trim(), @"\(.+?\)?$", "")).Where(_ => Regex.IsMatch(_, @"\d{4}-\d\d-\d\d")).FirstOrDefault();
         var seasonIndex = 0;
         if (content.QuerySelector("#season option[selected]") is HtmlNode selected) { seasonIndex = Convert.ToInt32(selected.InnerText.Trim()); }
 
@@ -241,6 +229,7 @@ public class DoubanApi
 
         if (subjectId == 0)
         {
+            _log.LogInformation($"No results found: {info.Name}");
             return new ApiMovieSubject();
         }
 
@@ -251,18 +240,8 @@ public class DoubanApi
     {
         _log.LogInformation($"Fetching celebrities for movie: {sid}");
         string url = $"https://movie.douban.com/subject/{sid}/celebrities";
-
-        if (DateTime.Now - _lastSearch < _timeSpan)
-        {
-            await Task.Delay(_timeSpan - (DateTime.Now - _lastSearch), token).ConfigureAwait(false);
-        }
-        HttpResponseMessage response = await _httpClient.GetAsync(url, token).ConfigureAwait(false);
-        if (!response.IsSuccessStatusCode)
-        {
-            _log.LogError($"Response: {response.StatusCode}");
-            return new List<PersonInfo>();
-        }
-        string responseText = await response.Content.ReadAsStringAsync(token);
+        string? responseText = await FetchUrl(url, token);
+        if (string.IsNullOrEmpty(responseText)) { return new List<PersonInfo>(); }
         var htmlDoc = new HtmlDocument();
         htmlDoc.LoadHtml(responseText);
 
@@ -311,18 +290,8 @@ public class DoubanApi
     {
         _log.LogInformation($"Fetching images for movie: {sid}");
         string url = $"https://movie.douban.com/subject/{sid}/photos?type={type}";
-
-        if (DateTime.Now - _lastSearch < _timeSpan)
-        {
-            await Task.Delay(_timeSpan - (DateTime.Now - _lastSearch), token).ConfigureAwait(false);
-        }
-        HttpResponseMessage response = await _httpClient.GetAsync(url, token).ConfigureAwait(false);
-        if (!response.IsSuccessStatusCode)
-        {
-            _log.LogError($"Response: {response.StatusCode}");
-            return new List<RemoteImageInfo>();
-        }
-        string responseText = await response.Content.ReadAsStringAsync(token);
+        string? responseText = await FetchUrl(url, token);
+        if (string.IsNullOrEmpty(responseText)) { return new List<RemoteImageInfo>(); }
         var htmlDoc = new HtmlDocument();
         htmlDoc.LoadHtml(responseText);
 
@@ -350,18 +319,8 @@ public class DoubanApi
     {
         _log.LogInformation($"Searching person: {keyword}");
         string url = $"https://movie.douban.com/j/subject_suggest?q={keyword}";
-
-        if (DateTime.Now - _lastSearch < _timeSpan)
-        {
-            await Task.Delay(_timeSpan - (DateTime.Now - _lastSearch), token).ConfigureAwait(false);
-        }
-        HttpResponseMessage response = await _httpClient.GetAsync(url, token).ConfigureAwait(false);
-        if (!response.IsSuccessStatusCode)
-        {
-            _log.LogError($"Response: {response.StatusCode}");
-            return new List<ApiPersonSubject>();
-        }
-        string responseText = await response.Content.ReadAsStringAsync(token);
+        string? responseText = await FetchUrl(url, token);
+        if (string.IsNullOrEmpty(responseText)) { return new List<ApiPersonSubject>(); }
 
         var results = JsonSerializer.Deserialize<List<ResultItem>>(responseText)!.Where(_ => _.type == "celebrity").Select(_ =>
         {
@@ -374,7 +333,7 @@ public class DoubanApi
             };
             return result;
         }).ToList();
-        _log.LogInformation($"{results.Count} result(s) found.");
+        _log.LogInformation($"{results.Count} result(s) found");
         return results;
     }
 
@@ -382,24 +341,15 @@ public class DoubanApi
     {
         _log.LogInformation($"Fetching celebrity: {cid}");
         string url = $"https://movie.douban.com/celebrity/{cid}/";
-
-        if (DateTime.Now - _lastSearch < _timeSpan)
-        {
-            await Task.Delay(_timeSpan - (DateTime.Now - _lastSearch), token).ConfigureAwait(false);
-        }
-        HttpResponseMessage response = await _httpClient.GetAsync(url, token).ConfigureAwait(false);
-        if (!response.IsSuccessStatusCode)
-        {
-            _log.LogError($"Response: {response.StatusCode}");
-            return new ApiPersonSubject();
-        }
-        string responseText = await response.Content.ReadAsStringAsync(token);
-
+        string? responseText = await FetchUrl(url, token);
+        if (string.IsNullOrEmpty(responseText)) { return new ApiPersonSubject(); }
         var htmlDoc = new HtmlDocument();
         htmlDoc.LoadHtml(responseText);
+
         var content = htmlDoc.QuerySelector("#content");
         var image = content.QuerySelector("#headline .pic img");
         var name = image.Attributes["alt"].Value;
+        _log.LogInformation($"Cid {cid} is: {name}");
         var posterUrl = image.Attributes["src"].Value;
         var originalName = content.QuerySelector("h1").InnerText.Replace(name, "").Trim();
         var info = content.QuerySelectorAll(".info ul li").Select(_ => _.InnerText.Trim().Split(": ")).Where(_ => _.Length > 1).ToDictionary(_ => _[0], _ => string.Join(": ", _[1..]).Trim());
@@ -427,5 +377,43 @@ public class DoubanApi
             ImdbId = info!.GetValueOrDefault("imdb编号", null),
         };
         return result;
+    }
+
+    private async Task<string?> FetchUrl(string url, CancellationToken token = default)
+    {
+        if (_caches.ContainsKey(url))
+        {
+            if (_caches[url].time > DateTime.Now - TimeSpan.FromDays(1))
+            {
+                _log.LogInformation($"Cache hit: {url}");
+                return _caches[url].content;
+            }
+            else
+            {
+                _caches.Remove(url);
+            }
+        }
+        if (_caches.Count > 0 && _cacheLastClean < DateTime.Now - TimeSpan.FromDays(1))
+        {
+            _log.LogInformation($"Removing expired cache");
+            _caches.Where(_ => _.Value.time < DateTime.Now - TimeSpan.FromDays(1)).ToList().ForEach(_ => _caches.Remove(_.Key));
+        }
+        if (DateTime.Now < _lastSearch + _timeSpan)
+        {
+            _lastSearch += _timeSpan;
+            var delay = _lastSearch - DateTime.Now;
+            _log.LogInformation($"Delay: {delay.TotalMilliseconds} ms");
+            await Task.Delay(_lastSearch - DateTime.Now, token).ConfigureAwait(false);
+        }
+        HttpResponseMessage response = await _httpClient.GetAsync(url, token).ConfigureAwait(false);
+        _lastSearch = DateTime.Now;
+        if (!response.IsSuccessStatusCode)
+        {
+            _log.LogError($"Response: {(int)response.StatusCode} {response.StatusCode}" + (response.StatusCode == System.Net.HttpStatusCode.Forbidden ? ", maybe you need to provide cookie" : ""));
+            return null;
+        }
+        var responseText = await response.Content.ReadAsStringAsync(token);
+        _caches[url] = new Cache() { content = responseText, time = DateTime.Now };
+        return responseText;
     }
 }

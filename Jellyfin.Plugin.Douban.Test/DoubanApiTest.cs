@@ -58,6 +58,9 @@ namespace Jellyfin.Plugin.Douban.Test
 
             result = _doubanApi.FetchMovie("26299465").Result;
             Assert.Equal("探索未知 第一季", result.Name ?? "");
+
+            result = _doubanApi.FetchMovie("35873969").Result;
+            Assert.Equal("名侦探柯南：黑铁的鱼影", result.Name ?? "");
         }
 
         [Fact]
@@ -66,6 +69,13 @@ namespace Jellyfin.Plugin.Douban.Test
             var list = _doubanApi.FetchMovieCelebrities("33400537").Result;
             Assert.NotEmpty(list);
             Assert.Equal("福田雄一", list[0].Name ?? "");
+        }
+
+        [Fact]
+        public void TestFetchMovieImages()
+        {
+            var list = _doubanApi.FetchMovieImages("33400537", "R").Result;
+            Assert.NotEmpty(list);
         }
     }
 }
