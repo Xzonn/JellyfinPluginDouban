@@ -15,7 +15,8 @@ namespace Jellyfin.Plugin.Douban;
 
 public class DoubanApi
 {
-    private struct Cache {
+    private struct Cache
+    {
         public string content;
         public DateTime time;
     }
@@ -24,23 +25,26 @@ public class DoubanApi
     public HttpClient GetHttpClient() => _httpClient;
     private readonly ILogger<DoubanApi> _log;
     private DateTime _lastSearch = DateTime.MinValue;
-    private readonly TimeSpan _timeSpan;
+    private TimeSpan _timeSpan => TimeSpan.FromMilliseconds(_configuration.RequestTimeSpan);
     private readonly DateTime _cacheLastClean;
     private readonly Dictionary<string, Cache> _caches;
+    private static PluginConfiguration _configuration
+    {
+        get
+        {
+            if (Plugin.Instance != null) { return Plugin.Instance.Configuration; }
+            return new PluginConfiguration();
+        }
+    }
 
     public DoubanApi(IHttpClientFactory httpClientFactory, ILogger<DoubanApi> log)
     {
-        var Configuration = new PluginConfiguration();
-        if (Plugin.Instance != null) { Configuration = Plugin.Instance.Configuration; }
-
         _httpClient = httpClientFactory.CreateClient();
         _httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
         _httpClient.DefaultRequestHeaders.Add("Referer", "https://www.douban.com/");
         _httpClient.DefaultRequestHeaders.Add("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8");
-        _httpClient.DefaultRequestHeaders.Add("Cookie", Configuration.Cookie);
         _httpClient.Timeout = TimeSpan.FromSeconds(5);
         _log = log;
-        _timeSpan = TimeSpan.FromMilliseconds(Configuration.RequestTimeSpan);
         _cacheLastClean = DateTime.Now;
         _caches = new Dictionary<string, Cache>();
     }
@@ -291,9 +295,9 @@ public class DoubanApi
         return results;
     }
 
-    public async Task<List<RemoteImageInfo>> FetchMovieImages(string sid, string type = "R", ImageType imageType=ImageType.Primary, CancellationToken token = default)
+    public async Task<List<RemoteImageInfo>> FetchMovieImages(string sid, string type = "R", ImageType imageType = ImageType.Primary, CancellationToken token = default)
     {
-        _log.LogInformation($"Fetching images for movie: {sid}");
+        _log.LogInformation($"Fetching images for movie: {sid}, type: {type}");
         string url = $"https://movie.douban.com/subject/{sid}/photos?type={type}";
         string? responseText = await FetchUrl(url, token);
         if (string.IsNullOrEmpty(responseText)) { return new List<RemoteImageInfo>(); }
@@ -310,7 +314,7 @@ public class DoubanApi
             {
                 ProviderName = Constants.PluginName,
                 Language = Constants.Language,
-                Type = imageType,
+                Type = _configuration.DistinguishUsingAspectRatio ? (width > height ? ImageType.Backdrop : ImageType.Primary) : imageType,
                 ThumbnailUrl = $"https://img2.doubanio.com/view/photo/s/public/{posterId}.jpg",
                 Url = $"https://img2.doubanio.com/view/photo/l/public/{posterId}.jpg",
                 Width = width,
@@ -320,7 +324,7 @@ public class DoubanApi
         return results;
     }
 
-    public async Task<List<ApiPersonSubject>> SearchPerson(string keyword,  CancellationToken token = default)
+    public async Task<List<ApiPersonSubject>> SearchPerson(string keyword, CancellationToken token = default)
     {
         _log.LogInformation($"Searching person: {keyword}");
         string url = $"https://movie.douban.com/j/subject_suggest?q={keyword}";
@@ -410,7 +414,9 @@ public class DoubanApi
             _log.LogInformation($"Delay: {delay.TotalMilliseconds} ms");
             await Task.Delay(_lastSearch - DateTime.Now, token).ConfigureAwait(false);
         }
-        HttpResponseMessage response = await _httpClient.GetAsync(url, token).ConfigureAwait(false);
+        var message = new HttpRequestMessage(HttpMethod.Get, url);
+        message.Headers.Add("Cookie", _configuration.DoubanCookie);
+        var response = await _httpClient.SendAsync(message, token).ConfigureAwait(false);
         _lastSearch = DateTime.Now;
         if (!response.IsSuccessStatusCode)
         {

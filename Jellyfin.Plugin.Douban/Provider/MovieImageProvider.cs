@@ -56,12 +56,16 @@ public class MovieImageProvider : IRemoteImageProvider, IHasOrder
             };
             images.Add(image);
         }
-        foreach (var _ in new Dictionary<string, ImageType>()
+        var dict = new Dictionary<string, ImageType>()
         {
             ["R"] = ImageType.Primary,
             ["W"] = ImageType.Backdrop,
-            ["S"] = ImageType.Backdrop,
-        })
+        };
+        if(Plugin.Instance!.Configuration.FetchStagePhoto)
+        {
+            dict["S"] = ImageType.Backdrop;
+        }
+        foreach (var _ in dict)
         {
             (await _api.FetchMovieImages(id.ToString(), _.Key, _.Value, token)).ForEach(__ => images.Add(__));
         }
