@@ -112,6 +112,11 @@ public class DoubanApi
         {
             searchResults = await SearchMovie(imdbId, token);
         }
+        if (searchResults.Count == 0 && info is SeasonInfo && Regex.IsMatch(info.Name, @"^(?:第 \d+ 季|Season \d+|Specials)$"))
+        {
+            // Season name is auto-generated, no need to search
+            return new List<RemoteSearchResult>();
+        }
         if (searchResults.Count == 0 && !string.IsNullOrEmpty(info.Name))
         {
             searchResults = await SearchMovie(info.Name.Replace(".", " "), token);
@@ -128,7 +133,7 @@ public class DoubanApi
         {
             searchResults = await SearchMovie(info.OriginalTitle.Replace(".", " "), token);
         }
-        if (searchResults.Count > 0 && (info is SeriesInfo || (info is SeasonInfo seasonInfo2 && seasonInfo2.IndexNumber == 1)))
+        if (searchResults.Count > 0 && ((info is SeriesInfo && !Regex.IsMatch(info.Name, @"第([一二三四五六七八九十百千万\d]+)季")) || (info is SeasonInfo seasonInfo2 && seasonInfo2.IndexNumber == 1)))
         {
             var season = Regex.Match(searchResults[0].Name!, @"第([一二三四五六七八九十百千万\d]+)季");
             if (season.Success && !new string[] { "一", "1" }.Contains(season.Groups[1].Value))
