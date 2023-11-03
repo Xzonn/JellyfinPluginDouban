@@ -30,7 +30,6 @@ public class PersonProvider : IRemoteMetadataProvider<Person, PersonLookupInfo>,
             int.TryParse(info.ProviderIds.GetValueOrDefault(Constants.OddbId), out personId);
         }
 
-
         if (personId == 0)
         {
             var searchResults = (await GetSearchResults(info, token)).ToList();
@@ -49,10 +48,7 @@ public class PersonProvider : IRemoteMetadataProvider<Person, PersonLookupInfo>,
         }
 
         var person = await _api.FetchPerson(personId.ToString(), token);
-        if (person == null)
-        {
-            return result;
-        }
+        if (string.IsNullOrEmpty(person.Cid)) { return result; }
         result.HasMetadata = true;
         result.Item = new Person
         {

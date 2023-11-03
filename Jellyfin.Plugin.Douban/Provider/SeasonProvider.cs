@@ -26,7 +26,7 @@ public class SeasonProvider : IRemoteMetadataProvider<Season, SeasonInfo>, IHasO
         var result = new MetadataResult<Season> { ResultLanguage = Constants.Language };
 
         var subject = await _api.FetchMovie(info, token);
-        if (subject == null) { return result; }
+        if (string.IsNullOrEmpty(subject.Sid)) { return result; }
 
         result.Item = new Season()
         {
