@@ -14,6 +14,14 @@
         "sourceUrl": "https://xzonn.top/JellyfinPluginDouban/Jellyfin.Plugin.Douban.1.0.0.0.zip",
         "timestamp": "2023-11-02T13:00:00Z",
         "version": "1.0.0.0"
+      },
+      {
+        "checksum": "6AB1F8D93688B8096D5DA5084119D1E1",
+        "changelog": "- Add rate control and caches\n- Fix null reference exceptions\n- Fix handling of multiple seasons",
+        "targetAbi": "10.8.0.0",
+        "sourceUrl": "https://xzonn.top/JellyfinPluginDouban/Jellyfin.Plugin.Douban.1.0.1.0.zip",
+        "timestamp": "2023-11-04T16:00:00Z",
+        "version": "1.0.1.0"
       }
     ]
   }
