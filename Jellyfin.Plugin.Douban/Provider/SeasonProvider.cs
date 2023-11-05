@@ -43,6 +43,7 @@ public class SeasonProvider : IRemoteMetadataProvider<Season, SeasonInfo>, IHasO
         };
         result.Item.SetProviderId(Constants.ProviderId, subject.Sid);
         if (!string.IsNullOrEmpty(subject.ImdbId)) { result.Item.SetProviderId(MetadataProvider.Imdb, subject.ImdbId); }
+        result.QueriedById = true;
         result.HasMetadata = true;
 
         (await _api.FetchMovieCelebrities(subject.Sid!, token)).ForEach(_ => result.AddPerson(_));
