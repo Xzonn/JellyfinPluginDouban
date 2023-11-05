@@ -25,7 +25,7 @@ public class PersonProvider : IRemoteMetadataProvider<Person, PersonLookupInfo>,
     public async Task<MetadataResult<Person>> GetMetadata(PersonLookupInfo info, CancellationToken token)
     {
         token.ThrowIfCancellationRequested();
-        _log.LogDebug(JsonSerializer.Serialize(info));
+        _log.LogDebug($"PersonLookupInfo: {JsonSerializer.Serialize(info, options: Constants.JsonSerializerOptions)}");
         var result = new MetadataResult<Person> { ResultLanguage = Constants.Language };
         if (!int.TryParse(info.ProviderIds.GetValueOrDefault(Constants.ProviderId), out var personId))
         {
@@ -44,14 +44,10 @@ public class PersonProvider : IRemoteMetadataProvider<Person, PersonLookupInfo>,
             }
         }
 
-        if (personId == 0)
-        {
-            return result;
-        }
+        if (personId == 0) { return result; }
 
         var person = await _api.FetchPerson(personId.ToString(), token);
         if (string.IsNullOrEmpty(person.Cid)) { return result; }
-        result.HasMetadata = true;
         result.Item = new Person
         {
             Name = person.Name,
@@ -65,6 +61,9 @@ public class PersonProvider : IRemoteMetadataProvider<Person, PersonLookupInfo>,
         };
         result.Item.SetProviderId(Constants.ProviderId, person.Cid);
         if (!string.IsNullOrEmpty(person.ImdbId)) { result.Item.SetProviderId(MetadataProvider.Imdb, person.ImdbId); }
+        result.QueriedById = true;
+        result.HasMetadata = true;
+
         return result;
     }
 

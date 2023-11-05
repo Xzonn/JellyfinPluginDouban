@@ -91,7 +91,7 @@ public class DoubanApi
                 Year = Convert.ToInt32(year),
             };
         }).ToList();
-        _log.LogDebug($"{results.Count} result(s) found");
+        _log.LogDebug($"{results.Count} result(s) found for: {keyword}, first: {results[0].Name}");
         return results;
     }
 
@@ -187,6 +187,43 @@ public class DoubanApi
         return results;
     }
 
+    public int TryParseDoubanId(ItemLookupInfo info)
+    {
+        int subjectId;
+        if (info is EpisodeInfo episodeInfo)
+        {
+            if (!int.TryParse(episodeInfo.SeriesProviderIds.GetValueOrDefault(Constants.ProviderId), out subjectId))
+            {
+                int.TryParse(episodeInfo.SeriesProviderIds.GetValueOrDefault(Constants.OddbId), out subjectId);
+            }
+
+            if (subjectId == 0)
+            {
+                var episodeId = episodeInfo.SeriesProviderIds.GetValueOrDefault(Constants.ProviderId);
+                if (!string.IsNullOrEmpty(episodeId) && episodeId.Contains("/episode/"))
+                {
+                    int.TryParse(episodeId.Split("/episode/")[0], out subjectId);
+                }
+            }
+        }
+        else
+        {
+            if (!int.TryParse(info.ProviderIds.GetValueOrDefault(Constants.ProviderId), out subjectId))
+            {
+                int.TryParse(info.ProviderIds.GetValueOrDefault(Constants.OddbId), out subjectId);
+            }
+
+            if (subjectId == 0 && info is SeasonInfo seasonInfo && seasonInfo.IndexNumber == 1)
+            {
+                if (!int.TryParse(seasonInfo.SeriesProviderIds.GetValueOrDefault(Constants.ProviderId), out subjectId))
+                {
+                    int.TryParse(seasonInfo.SeriesProviderIds.GetValueOrDefault(Constants.OddbId), out subjectId);
+                }
+            }
+        }
+        return subjectId;
+    }
+
     public async Task<ApiMovieSubject> FetchMovie(string sid, CancellationToken token = default)
     {
         _log.LogDebug($"Fetching movie: {sid}");
@@ -230,32 +267,6 @@ public class DoubanApi
             SeasonIndex = seasonIndex,
         };
         return result;
-    }
-
-    public int TryParseDoubanId(ItemLookupInfo info)
-    {
-        if (!int.TryParse(info.ProviderIds.GetValueOrDefault(Constants.ProviderId), out var subjectId))
-        {
-            int.TryParse(info.ProviderIds.GetValueOrDefault(Constants.OddbId), out subjectId);
-        }
-
-        if (subjectId == 0 && info is SeasonInfo seasonInfo && seasonInfo.IndexNumber == 1)
-        {
-            if (!int.TryParse(seasonInfo.SeriesProviderIds.GetValueOrDefault(Constants.ProviderId), out subjectId))
-            {
-                int.TryParse(seasonInfo.SeriesProviderIds.GetValueOrDefault(Constants.OddbId), out subjectId);
-            }
-        }
-
-        if (subjectId == 0 && info is EpisodeInfo episodeInfo)
-        {
-            if (!int.TryParse(episodeInfo.SeriesProviderIds.GetValueOrDefault(Constants.ProviderId), out subjectId))
-            {
-                int.TryParse(episodeInfo.SeriesProviderIds.GetValueOrDefault(Constants.OddbId), out subjectId);
-            }
-        }
-
-        return subjectId;
     }
 
     public async Task<ApiMovieSubject> FetchMovie(ItemLookupInfo info, CancellationToken token = default)
@@ -358,6 +369,35 @@ public class DoubanApi
         return results;
     }
 
+    public async Task<ApiEpisodeSubject> FetchMovieEpisode(string sid, int index, CancellationToken token = default)
+    {
+        _log.LogDebug($"Fetching episode: {sid}/{index}");
+        string url = $"https://movie.douban.com/subject/{sid}/episode/{index}/";
+        string? responseText = await FetchUrl(url, token);
+        if (string.IsNullOrEmpty(responseText)) { return new ApiEpisodeSubject(); }
+        var htmlDoc = new HtmlDocument();
+        htmlDoc.LoadHtml(responseText);
+
+        var title = htmlDoc.QuerySelector("title").InnerText.Trim();
+        _log.LogDebug($"Episode {sid}/{index} is: {title}");
+        var info = htmlDoc.QuerySelectorAll("#content .ep-info li").Select(_ => _.InnerText.Trim().Split(":\n")).Where(_ => _.Length > 1).ToDictionary(_ => _[0], _ => string.Join(":\n", _[1..]).Trim());
+        var name = info!.GetValueOrDefault("本集中文名", "暂无，欢迎添加");
+        var originalName = info!.GetValueOrDefault("本集原名", "暂无，欢迎添加");
+        var screenTimeStr = info!.GetValueOrDefault("播放时间", "暂无，欢迎添加");
+        DateTime screenTime = DateTime.MinValue;
+        try { DateTime.TryParse(screenTimeStr[..10], out screenTime); } catch { }
+        var intro = htmlDoc.QuerySelector("meta[name=\"description\"]")?.Attributes["content"]?.Value.Trim();
+
+        var result = new ApiEpisodeSubject()
+        {
+            Name = name == "暂无，欢迎添加" ? null : name,
+            OriginalName = originalName == "暂无，欢迎添加" ? null : originalName,
+            ScreenTime = screenTime == DateTime.MinValue ? null : screenTime,
+            Intro = info!.GetValueOrDefault("剧情简介", "暂无，欢迎添加") == "暂无，欢迎添加" ? null : intro,
+        };
+        return result;
+    }
+
     public async Task<List<ApiPersonSubject>> SearchPerson(string keyword, CancellationToken token = default)
     {
         keyword = keyword.Trim();
@@ -379,7 +419,8 @@ public class DoubanApi
             };
             return result;
         }).ToList();
-        _log.LogDebug($"{results.Count} result(s) found");
+        if (results.Count == 0) { _log.LogDebug($"No results found: {keyword}"); }
+        else { _log.LogDebug($"{results.Count} result(s) found for: {keyword}, first: {results[0].Name}"); }
         return results;
     }
 
