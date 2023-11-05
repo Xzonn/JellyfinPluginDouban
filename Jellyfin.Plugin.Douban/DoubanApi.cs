@@ -1,5 +1,6 @@
 ﻿using Emby.Naming.Video;
 using HtmlAgilityPack;
+using Jellyfin.Plugin.Douban.Configuration;
 using Jellyfin.Plugin.Douban.Model;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Providers;
@@ -8,7 +9,6 @@ using MediaBrowser.Model.Providers;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using Jellyfin.Plugin.Douban.Configuration;
 using System.Web;
 
 namespace Jellyfin.Plugin.Douban;
@@ -127,13 +127,21 @@ public class DoubanApi
             if (searchResults.Count == 0)
             {
                 VideoResolver.TryCleanString(info.Name, new Emby.Naming.Common.NamingOptions(), out var newName);
-                if (!string.IsNullOrEmpty(newName) && !string.Equals(info.Name, newName, StringComparison.Ordinal))
+                if (!string.IsNullOrEmpty(newName))
+                {
+                    searchResults = await SearchMovie(newName.Replace(".", " "), token);
+                }
+            }
+            if (searchResults.Count == 0)
+            {
+                var newName = AnitomySharp.AnitomySharp.Parse(info.Name).FirstOrDefault(_ => _.Category == AnitomySharp.Element.ElementCategory.ElementAnimeTitle)?.Value;
+                if (!string.IsNullOrEmpty(newName))
                 {
                     searchResults = await SearchMovie(newName.Replace(".", " "), token);
                 }
             }
         }
-        if (searchResults.Count == 0 && !string.IsNullOrEmpty(info.OriginalTitle) && !string.Equals(info.OriginalTitle, info.Name, StringComparison.Ordinal))
+        if (searchResults.Count == 0 && !string.IsNullOrEmpty(info.OriginalTitle))
         {
             searchResults = await SearchMovie(info.OriginalTitle.Replace(".", " "), token);
         }
