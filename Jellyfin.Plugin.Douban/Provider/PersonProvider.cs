@@ -4,8 +4,9 @@ using MediaBrowser.Controller.Providers;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Providers;
 using Microsoft.Extensions.Logging;
+using System.Text.Json;
 
-namespace Jellyfin.Plugin.Douban.Providers;
+namespace Jellyfin.Plugin.Douban.Provider;
 
 public class PersonProvider : IRemoteMetadataProvider<Person, PersonLookupInfo>, IHasOrder
 {
@@ -24,6 +25,7 @@ public class PersonProvider : IRemoteMetadataProvider<Person, PersonLookupInfo>,
     public async Task<MetadataResult<Person>> GetMetadata(PersonLookupInfo info, CancellationToken token)
     {
         token.ThrowIfCancellationRequested();
+        _log.LogDebug(JsonSerializer.Serialize(info));
         var result = new MetadataResult<Person> { ResultLanguage = Constants.Language };
         if (!int.TryParse(info.ProviderIds.GetValueOrDefault(Constants.ProviderId), out var personId))
         {
@@ -104,7 +106,7 @@ public class PersonProvider : IRemoteMetadataProvider<Person, PersonLookupInfo>,
 
     public async Task<HttpResponseMessage> GetImageResponse(string url, CancellationToken token)
     {
-        _log.LogInformation($"Fetching image: {url}");
+        _log.LogDebug($"Fetching image: {url}");
         return await _api.GetHttpClient().GetAsync(url, token).ConfigureAwait(false);
     }
 }

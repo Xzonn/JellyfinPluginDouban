@@ -3,6 +3,7 @@ using MediaBrowser.Controller.Providers;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Providers;
 using Microsoft.Extensions.Logging;
+using System.Text.Json;
 
 namespace Jellyfin.Plugin.Douban.Provider;
 
@@ -23,6 +24,7 @@ public class MovieProvider : IRemoteMetadataProvider<Movie, MovieInfo>, IHasOrde
     public async Task<MetadataResult<Movie>> GetMetadata(MovieInfo info, CancellationToken token)
     {
         token.ThrowIfCancellationRequested();
+        _log.LogDebug($"MovieInfo: {JsonSerializer.Serialize(info, options: Constants.JsonSerializerOptions)}");
         var result = new MetadataResult<Movie> { ResultLanguage = Constants.Language };
 
         var subject = await _api.FetchMovie(info, token);
@@ -50,14 +52,15 @@ public class MovieProvider : IRemoteMetadataProvider<Movie, MovieInfo>, IHasOrde
         return result;
     }
 
-    public async Task<IEnumerable<RemoteSearchResult>> GetSearchResults(MovieInfo searchInfo, CancellationToken token)
+    public async Task<IEnumerable<RemoteSearchResult>> GetSearchResults(MovieInfo info, CancellationToken token)
     {
-        return await _api.GetMovieSearchResults(searchInfo, token);
+        _log.LogDebug($"MovieInfo: {JsonSerializer.Serialize(info, options: Constants.JsonSerializerOptions)}");
+        return await _api.GetMovieSearchResults(info, true, token);
     }
 
     public async Task<HttpResponseMessage> GetImageResponse(string url, CancellationToken token)
     {
-        _log.LogInformation($"Fetching image: {url}");
+        _log.LogDebug($"Fetching image: {url}");
         return await _api.GetHttpClient().GetAsync(url, token).ConfigureAwait(false);
     }
 }

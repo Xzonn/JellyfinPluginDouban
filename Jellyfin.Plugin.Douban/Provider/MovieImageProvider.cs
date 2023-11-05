@@ -6,7 +6,7 @@ using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Providers;
 using Microsoft.Extensions.Logging;
 
-namespace Jellyfin.Plugin.Douban.Providers;
+namespace Jellyfin.Plugin.Douban.Provider;
 
 public class MovieImageProvider : IRemoteImageProvider, IHasOrder
 {
@@ -75,7 +75,7 @@ public class MovieImageProvider : IRemoteImageProvider, IHasOrder
 
     public async Task<HttpResponseMessage> GetImageResponse(string url, CancellationToken token)
     {
-        _log.LogInformation($"Fetching image: {url}");
+        _log.LogDebug($"Fetching image: {url}");
         return await _api.GetHttpClient().GetAsync(url, token).ConfigureAwait(false);
     }
 }
