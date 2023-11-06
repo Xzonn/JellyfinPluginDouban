@@ -125,17 +125,20 @@ public class DoubanApi
         }
 
         var searchNames = new List<string?>();
-        if (searchResults.Count == 0 && info is EpisodeInfo)
+        if (searchResults.Count == 0)
         {
-            // For episode, DO NOT SEARCH NAME DIRECTLY
-            searchNames.Add(Path.GetFileName(info.Path));
-            searchNames.Add(Path.GetFileName(Path.GetDirectoryName(info.Path)));
-        }
-        else
-        {
-            searchNames.Add(info.Name);
-            searchNames.Add(info.OriginalTitle);
-            searchNames.Add(Path.GetFileName(info.Path));
+            if (info is EpisodeInfo)
+            {
+                // For episode, DO NOT SEARCH NAME DIRECTLY
+                searchNames.Add(Path.GetFileName(info.Path));
+                searchNames.Add(Path.GetFileName(Path.GetDirectoryName(info.Path)));
+            }
+            else
+            {
+                searchNames.Add(info.Name);
+                searchNames.Add(info.OriginalTitle);
+                searchNames.Add(Path.GetFileName(info.Path));
+            }
         }
 
         foreach (var name in searchNames)
