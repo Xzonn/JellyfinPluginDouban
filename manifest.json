@@ -11,7 +11,7 @@
         "checksum": "B727A31C59E815FB63FB21C1463C7E26",
         "changelog": "Initial commit",
         "targetAbi": "10.8.0.0",
-        "sourceUrl": "https://xzonn.top/JellyfinPluginDouban/Jellyfin.Plugin.Douban.1.0.0.0.zip",
+        "sourceUrl": "https://xzonn.top/JellyfinPluginDouban/dist/Jellyfin.Plugin.Douban.1.0.0.0.zip",
         "timestamp": "2023-11-02T13:00:00Z",
         "version": "1.0.0.0"
       },
@@ -19,7 +19,7 @@
         "checksum": "6AB1F8D93688B8096D5DA5084119D1E1",
         "changelog": "- Add rate control and caches\n- Fix null reference exceptions\n- Fix handling of multiple seasons",
         "targetAbi": "10.8.0.0",
-        "sourceUrl": "https://xzonn.top/JellyfinPluginDouban/Jellyfin.Plugin.Douban.1.0.1.0.zip",
+        "sourceUrl": "https://xzonn.top/JellyfinPluginDouban/dist/Jellyfin.Plugin.Douban.1.0.1.0.zip",
         "timestamp": "2023-11-04T16:00:00Z",
         "version": "1.0.1.0"
       },
@@ -27,7 +27,7 @@
         "checksum": "5030E0CBEA1FA189FE7A3531B9187E62",
         "changelog": "- Update config\n- Add QueriedById property to result object\n- Add AnitomySharp to search for titles\n- Add EpisodeProvider",
         "targetAbi": "10.8.0.0",
-        "sourceUrl": "https://xzonn.top/JellyfinPluginDouban/Jellyfin.Plugin.Douban.1.0.2.0.zip",
+        "sourceUrl": "https://xzonn.top/JellyfinPluginDouban/dist/Jellyfin.Plugin.Douban.1.0.2.0.zip",
         "timestamp": "2023-11-06T08:00:00Z",
         "version": "1.0.2.0"
       }
