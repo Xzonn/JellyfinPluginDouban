@@ -22,6 +22,14 @@
         "sourceUrl": "https://xzonn.top/JellyfinPluginDouban/Jellyfin.Plugin.Douban.1.0.1.0.zip",
         "timestamp": "2023-11-04T16:00:00Z",
         "version": "1.0.1.0"
+      },
+      {
+        "checksum": "5030E0CBEA1FA189FE7A3531B9187E62",
+        "changelog": "- Update config\n- Add QueriedById property to result object\n- Add AnitomySharp to search for titles\n- Add EpisodeProvider",
+        "targetAbi": "10.8.0.0",
+        "sourceUrl": "https://xzonn.top/JellyfinPluginDouban/Jellyfin.Plugin.Douban.1.0.2.0.zip",
+        "timestamp": "2023-11-06T08:00:00Z",
+        "version": "1.0.2.0"
       }
     ]
   }
