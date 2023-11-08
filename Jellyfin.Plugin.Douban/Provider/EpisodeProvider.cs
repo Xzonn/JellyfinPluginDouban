@@ -49,6 +49,7 @@ public class EpisodeProvider : IRemoteMetadataProvider<Episode, EpisodeInfo>, IH
             IndexNumber = index,
             Overview = subject.Intro,
             PremiereDate = subject.ScreenTime,
+            ParentIndexNumber = movie.SeasonIndex > 0 ? movie.SeasonIndex : 1,
         };
         result.Item.SetProviderId(Constants.ProviderId, $"{movie.Sid}/episode/{index}");
         result.QueriedById = true;
