@@ -247,7 +247,7 @@ public class DoubanApi
         var info = content.QuerySelector("#info").InnerText.Trim().Split("\n").Select(_ => _.Trim().Split(": ")).Where(_ => _.Length > 1).ToDictionary(_ => _[0], _ => string.Join(": ", _[1..]).Trim());
         var type = "电影";
         if (info.ContainsKey("集数") || info.ContainsKey("单集片长")) { type = "电视剧"; }
-        var intro = string.Join("\n", content.QuerySelector("#link-report-intra span").InnerText.Trim().Split("\n").Select(_ => _.Trim()));
+        var intro = string.Join("\n", (content.QuerySelector("#link-report-intra span.all") ?? content.QuerySelector("#link-report-intra span")).InnerText.Trim().Split("\n").Select(_ => _.Trim()));
         var screenTime = info!.GetValueOrDefault("上映日期", "")!.Split("/").Select(_ => Regex.Replace(_.Trim(), @"\(.+?\)?$", "")).Where(_ => Regex.IsMatch(_, @"\d{4}-\d\d-\d\d")).FirstOrDefault();
         var seasonIndex = 0;
         if (content.QuerySelector("#season option[selected]") is HtmlNode selected) { seasonIndex = Convert.ToInt32(selected.InnerText.Trim()); }
@@ -262,9 +262,9 @@ public class DoubanApi
             OriginalName = originalName,
             Year = year,
             Intro = intro,
-            Genre = info!.GetValueOrDefault("类型", "")!.Split("/").Select(_ => _.Trim()).ToArray(),
+            Genre = info!.GetValueOrDefault("类型")?.Split("/").Select(_ => _.Trim()).ToArray(),
             Website = info!.GetValueOrDefault("官方网站", null),
-            Country = info!.GetValueOrDefault("制片国家/地区", "")!.Split("/").Select(_ => _.Trim()).ToArray(),
+            Country = info!.GetValueOrDefault("制片国家/地区")?.Split("/").Select(_ => _.Trim()).ToArray(),
             ScreenTime = string.IsNullOrEmpty(screenTime) ? null : Convert.ToDateTime(screenTime),
             ImdbId = info!.GetValueOrDefault("IMDb", null),
             SeasonIndex = seasonIndex,
