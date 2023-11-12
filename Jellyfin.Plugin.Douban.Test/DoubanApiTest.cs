@@ -27,6 +27,10 @@ namespace Jellyfin.Plugin.Douban.Test
             list = _doubanApi.SearchMovie("tt8207660").Result;
             Assert.NotEmpty(list);
             Assert.Equal("我是大哥大", list[0].Name ?? "");
+
+            list = _doubanApi.SearchMovie("星灵感应 (2023)").Result;
+            Assert.NotEmpty(list);
+            Assert.Equal("星灵感应", list[0].Name ?? "");
         }
 
         [Fact]

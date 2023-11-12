@@ -42,7 +42,7 @@ public class SeasonProvider : IRemoteMetadataProvider<Season, SeasonInfo>, IHasO
             Tags = subject.Tags,
             ProductionLocations = subject.Country,
             PremiereDate = subject.ScreenTime,
-            IndexNumber = subject.SeasonIndex > 0 ? subject.SeasonIndex : 1,
+            IndexNumber = subject.SeasonIndex,
         };
         result.Item.SetProviderId(Constants.ProviderId, subject.Sid);
         if (!string.IsNullOrEmpty(subject.ImdbId)) { result.Item.SetProviderId(MetadataProvider.Imdb, subject.ImdbId); }

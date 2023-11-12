@@ -31,14 +31,13 @@ public class EpisodeProvider : IRemoteMetadataProvider<Episode, EpisodeInfo>, IH
         var movie = await _api.FetchMovie(info, token);
         if (string.IsNullOrEmpty(movie.Sid)) { return result; }
 
-        var index = info.IndexNumber ?? 0;
-        if (index == 0)
-        {
-            var fileName = Path.GetFileName(info.Path);
-            var indexString = AnitomySharp.AnitomySharp.Parse(fileName).FirstOrDefault(p => p.Category == Element.ElementCategory.ElementEpisodeNumber)?.Value;
-            if (!string.IsNullOrEmpty(indexString)) { index = int.Parse(indexString); }
-        }
-        if (index == 0) { return result; }
+        var index = 0;
+        var fileName = Path.GetFileName(info.Path);
+        var indexString = AnitomySharp.AnitomySharp.Parse(fileName).FirstOrDefault(p => p.Category == Element.ElementCategory.ElementEpisodeNumber)?.Value;
+        if (!string.IsNullOrEmpty(indexString)) { index = int.Parse(indexString); }
+        if (index == 0) { index = info.IndexNumber ?? 0; }
+        if (index == 0 || index > movie.EpisodeCount) { return result; }
+
         var subject = await _api.FetchMovieEpisode(movie.Sid, index, token);
         if (string.IsNullOrEmpty(subject.Name)) { return result; }
 
@@ -49,7 +48,7 @@ public class EpisodeProvider : IRemoteMetadataProvider<Episode, EpisodeInfo>, IH
             IndexNumber = index,
             Overview = subject.Intro,
             PremiereDate = subject.ScreenTime,
-            ParentIndexNumber = movie.SeasonIndex > 0 ? movie.SeasonIndex : 1,
+            ParentIndexNumber = movie.SeasonIndex,
         };
         result.Item.SetProviderId(Constants.ProviderId, $"{movie.Sid}/episode/{index}");
         result.QueriedById = true;
