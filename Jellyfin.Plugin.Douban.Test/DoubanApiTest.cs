@@ -1,6 +1,7 @@
 using MediaBrowser.Controller.Providers;
 using MediaBrowser.Model.Entities;
 using Microsoft.Extensions.DependencyInjection;
+using System;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -50,7 +51,10 @@ namespace Jellyfin.Plugin.Douban.Test
         [Fact]
         public void TestFetchMovie()
         {
-            var result = _doubanApi.FetchMovie("33400537").Result;
+            var result = _doubanApi.FetchMovie("30183785").Result;
+            Assert.Equal("我是大哥大", result.Name ?? "");
+
+            result = _doubanApi.FetchMovie("33400537").Result;
             Assert.Equal("我是大哥大 电影版", result.Name ?? "");
 
             result = _doubanApi.FetchMovie("27199894").Result;

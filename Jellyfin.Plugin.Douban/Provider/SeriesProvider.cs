@@ -38,10 +38,17 @@ public class SeriesProvider : IRemoteMetadataProvider<Series, SeriesInfo>, IHasO
             Overview = subject.Intro,
             ProductionYear = subject.Year,
             HomePageUrl = subject.Website,
-            Genres = subject.Genre,
+            Genres = subject.Genres,
+            Tags = subject.Tags,
             ProductionLocations = subject.Country,
             PremiereDate = subject.ScreenTime,
+            AirTime = "",
         };
+        if (subject.ScreenTime != null)
+        {
+            result.Item.AirTime = subject.ScreenTime?.ToString("yyyy-MM-dd");
+            result.Item.AirDays = new[] { (subject.ScreenTime ?? new DateTime()).DayOfWeek };
+        }
         result.Item.SetProviderId(Constants.ProviderId, subject.Sid);
         if (!string.IsNullOrEmpty(subject.ImdbId)) { result.Item.SetProviderId(MetadataProvider.Imdb, subject.ImdbId); }
         result.QueriedById = true;

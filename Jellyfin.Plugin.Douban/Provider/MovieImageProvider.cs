@@ -1,4 +1,5 @@
-﻿using MediaBrowser.Controller.Entities;
+﻿using Jellyfin.Plugin.Douban.Configuration;
+using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Providers;
@@ -12,6 +13,14 @@ public class MovieImageProvider : IRemoteImageProvider, IHasOrder
 {
     private readonly DoubanApi _api;
     private readonly ILogger<MovieImageProvider> _log;
+    private static PluginConfiguration _configuration
+    {
+        get
+        {
+            if (Plugin.Instance != null) { return Plugin.Instance.Configuration; }
+            return new PluginConfiguration();
+        }
+    }
 
     public MovieImageProvider(DoubanApi api, ILogger<MovieImageProvider> logger)
     {
@@ -50,9 +59,9 @@ public class MovieImageProvider : IRemoteImageProvider, IHasOrder
             {
                 ProviderName = Constants.PluginName,
                 Language = Constants.Language,
-                ThumbnailUrl = $"https://img2.doubanio.com/view/photo/s/public/{subject.PosterId}.jpg",
+                ThumbnailUrl = $"{_configuration.CdnServer}/view/photo/s/public/{subject.PosterId}.jpg",
                 Type = ImageType.Primary,
-                Url = $"https://img2.doubanio.com/view/photo/l/public/{subject.PosterId}.jpg",
+                Url = $"{_configuration.CdnServer}/view/photo/l/public/{subject.PosterId}.jpg",
             };
             images.Add(image);
         }

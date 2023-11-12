@@ -24,9 +24,9 @@ public class DoubanApi
     private readonly HttpClient _httpClient;
     public HttpClient GetHttpClient() => _httpClient;
     private readonly ILogger<DoubanApi> _log;
-    private DateTime _lastSearch = DateTime.MinValue;
+    private static DateTime _lastSearch = DateTime.MinValue;
     private TimeSpan _timeSpan => TimeSpan.FromMilliseconds(_configuration.RequestTimeSpan);
-    private readonly DateTime _cacheLastClean;
+    private static DateTime _cacheLastClean = DateTime.MinValue;
     private readonly Dictionary<string, Cache> _caches;
     private static PluginConfiguration _configuration
     {
@@ -41,7 +41,7 @@ public class DoubanApi
     {
         _httpClient = httpClientFactory.CreateClient();
         _httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
-        _httpClient.DefaultRequestHeaders.Add("Referer", "https://www.douban.com/");
+        _httpClient.DefaultRequestHeaders.Add("Referer", "https://movie.douban.com/");
         _httpClient.DefaultRequestHeaders.Add("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8");
         _httpClient.Timeout = TimeSpan.FromSeconds(5);
         _log = log;
@@ -179,7 +179,7 @@ public class DoubanApi
             {
                 Name = _.Name,
                 SearchProviderName = _.OriginalName,
-                ImageUrl = string.IsNullOrEmpty(_.PosterId) ? "" : $"https://img2.doubanio.com/view/photo/l/public/{_.PosterId}.jpg",
+                ImageUrl = string.IsNullOrEmpty(_.PosterId) ? "" : $"{_configuration.CdnServer}/view/photo/l/public/{_.PosterId}.jpg",
                 Overview = _.Intro,
                 ProductionYear = _.Year,
                 PremiereDate = _.ScreenTime,
@@ -249,7 +249,7 @@ public class DoubanApi
         var type = "电影";
         if (info.ContainsKey("集数") || info.ContainsKey("单集片长")) { type = "电视剧"; }
         var intro = string.Join("\n", (content.QuerySelector("#link-report-intra span.all") ?? content.QuerySelector("#link-report-intra span")).InnerText.Trim().Split("\n").Select(_ => _.Trim()));
-        var screenTime = info!.GetValueOrDefault("上映日期", "")!.Split("/").Select(_ => Regex.Replace(_.Trim(), @"\(.+?\)?$", "")).Where(_ => Regex.IsMatch(_, @"\d{4}-\d\d-\d\d")).FirstOrDefault();
+        var screenTime = info!.GetValueOrDefault("上映日期", info!.GetValueOrDefault("首播", ""))!.Split("/").Select(_ => Regex.Replace(_.Trim(), @"\(.+?\)?$", "")).Where(_ => Regex.IsMatch(_, @"\d{4}-\d\d-\d\d")).FirstOrDefault();
         var seasonIndex = 0;
         if (content.QuerySelector("#season option[selected]") is HtmlNode selected) { seasonIndex = Convert.ToInt32(selected.InnerText.Trim()); }
 
@@ -263,13 +263,14 @@ public class DoubanApi
             OriginalName = originalName,
             Year = year,
             Intro = intro,
-            Genre = info!.GetValueOrDefault("类型")?.Split("/").Select(_ => _.Trim()).ToArray(),
+            Genres = info!.GetValueOrDefault("类型")?.Split("/").Select(_ => _.Trim()).ToArray(),
             Website = info!.GetValueOrDefault("官方网站", null),
             Country = info!.GetValueOrDefault("制片国家/地区")?.Split("/").Select(_ => _.Trim()).ToArray(),
             ScreenTime = string.IsNullOrEmpty(screenTime) ? null : Convert.ToDateTime(screenTime),
             ImdbId = info!.GetValueOrDefault("IMDb", null),
             SeasonIndex = seasonIndex,
         };
+        result.Tags = result.Genres?.ToArray();
         return result;
     }
 
@@ -310,6 +311,14 @@ public class DoubanApi
             var name = link.InnerText.Trim().Split(" ")[0];
             var cid = Regex.Match(link.Attributes["href"].Value, @"/celebrity/(\d+)/").Groups[1].Value;
             var posterUrl = Regex.Match(_.QuerySelector(".avatar").Attributes["style"].Value, @"url\((.+?\.(?:webp|png|jpg|jpeg|gif))\)").Groups[1].Value;
+            if (!_configuration.FetchCelebrityImages || posterUrl.Contains("celebrity-default"))
+            {
+                posterUrl = null;
+            }
+            else
+            {
+                posterUrl = Regex.Replace(posterUrl, @"https?://img\d+\.doubanio.com", _configuration.CdnServer);
+            }
             var roleText = new string[] { "" };
             if (_.QuerySelector(".role") is HtmlNode __) { roleText = __.InnerText.Trim().Split(" "); }
             var type = roleText[0];
@@ -333,14 +342,16 @@ public class DoubanApi
                     "配音" => PersonType.Actor,
                     "编剧" => PersonType.Writer,
                     "制片人" => PersonType.Producer,
+                    "制作人" => PersonType.Producer,
                     "作曲" => PersonType.Composer,
-                    _ => type,
+                    "音乐" => PersonType.Composer,
+                    _ => "",
                 },
                 Role = role,
             };
             result.SetProviderId(Constants.ProviderId, cid);
             return result;
-        }).ToList();
+        }).Where(_ => !string.IsNullOrEmpty(_.Type)).ToList();
         return results;
     }
 
@@ -364,8 +375,8 @@ public class DoubanApi
                 ProviderName = Constants.PluginName,
                 Language = Constants.Language,
                 Type = _configuration.DistinguishUsingAspectRatio ? (width > height ? ImageType.Backdrop : ImageType.Primary) : imageType,
-                ThumbnailUrl = $"https://img2.doubanio.com/view/photo/s/public/{posterId}.jpg",
-                Url = $"https://img2.doubanio.com/view/photo/l/public/{posterId}.jpg",
+                ThumbnailUrl = $"{_configuration.CdnServer}/view/photo/s/public/{posterId}.jpg",
+                Url = $"{_configuration.CdnServer}/view/photo/l/public/{posterId}.jpg",
                 Width = width,
                 Height = height,
             };
@@ -442,6 +453,14 @@ public class DoubanApi
         var name = image.Attributes["alt"].Value;
         _log.LogDebug($"Cid {cid} is: {name}");
         var posterUrl = image.Attributes["src"].Value;
+        if (posterUrl.Contains("celebrity-default"))
+        {
+            posterUrl = null;
+        }
+        else
+        {
+            posterUrl = Regex.Replace(posterUrl, @"https?://img\d+\.doubanio.com", _configuration.CdnServer);
+        }
         var originalName = content.QuerySelector("h1").InnerText.Replace(name, "").Trim();
         var info = content.QuerySelectorAll(".info ul li").Select(_ => _.InnerText.Trim().Split(": ")).Where(_ => _.Length > 1).ToDictionary(_ => _[0], _ => string.Join(": ", _[1..]).Trim());
         var intro = string.Join("\n", (content.QuerySelector("#intro .bd .all") ?? content.QuerySelector("#intro .bd")).InnerText.Trim().Split("\n").Select(_ => _.Trim()));
@@ -472,6 +491,12 @@ public class DoubanApi
 
     private async Task<string?> FetchUrl(string url, CancellationToken token = default)
     {
+        if (_caches.Count > 0 && _cacheLastClean < DateTime.Now - TimeSpan.FromDays(1))
+        {
+            _log.LogDebug($"Removing expired cache");
+            _caches.Where(_ => _.Value.time < DateTime.Now - TimeSpan.FromDays(1)).ToList().ForEach(_ => _caches.Remove(_.Key));
+            _cacheLastClean = DateTime.Now;
+        }
         if (_caches.ContainsKey(url))
         {
             if (_caches[url].time > DateTime.Now - TimeSpan.FromDays(1))
@@ -483,11 +508,6 @@ public class DoubanApi
             {
                 _caches.Remove(url);
             }
-        }
-        if (_caches.Count > 0 && _cacheLastClean < DateTime.Now - TimeSpan.FromDays(1))
-        {
-            _log.LogDebug($"Removing expired cache");
-            _caches.Where(_ => _.Value.time < DateTime.Now - TimeSpan.FromDays(1)).ToList().ForEach(_ => _caches.Remove(_.Key));
         }
         if (DateTime.Now < _lastSearch + _timeSpan)
         {

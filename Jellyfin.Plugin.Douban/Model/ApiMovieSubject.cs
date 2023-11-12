@@ -9,7 +9,8 @@ public class ApiMovieSubject
     public string? PosterId { get; set; }
     public string? Sid { get; set; }
     public int Year { get; set; }
-    public string[]? Genre { get; set; }
+    public string[]? Genres { get; set; }
+    public string[]? Tags { get; set; }
     public string? Website { get; set; }
     public string[]? Country { get; set; }
     public DateTime? ScreenTime { get; set; }

@@ -38,7 +38,8 @@ public class MovieProvider : IRemoteMetadataProvider<Movie, MovieInfo>, IHasOrde
             Overview = subject.Intro,
             ProductionYear = subject.Year,
             HomePageUrl = subject.Website,
-            Genres = subject.Genre,
+            Genres = subject.Genres,
+            Tags = subject.Tags,
             ProductionLocations = subject.Country,
             PremiereDate = subject.ScreenTime,
         };

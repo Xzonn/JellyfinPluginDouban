@@ -14,6 +14,11 @@
                 <div class="content-primary">
                     <form id="doubanConfigurationForm">
                         <div class="inputContainer">
+                            <label class="inputeLabel inputLabelUnfocused" for="CdnServer">豆瓣图片服务器</label>
+                            <input id="CdnServer" name="CdnServer" type="text" is="emby-input" />
+                            <div class="fieldDescription">豆瓣图片的服务器。</div>
+                        </div>
+                        <div class="inputContainer">
                             <label class="inputeLabel inputLabelUnfocused" for="DoubanCookie">Cookie</label>
                             <input id="DoubanCookie" name="DoubanCookie" type="text" is="emby-input" />
                             <div class="fieldDescription">豆瓣登录状态的 Cookie。</div>
@@ -33,6 +38,12 @@
                             <label class="emby-checkbox-label">
                                 <input id="FetchStagePhoto" name="FetchStagePhoto" type="checkbox" is="emby-checkbox" />
                                 <span>获取图片时获取剧照</span>
+                            </label>
+                        </div>
+                        <div class="checkboxContainer checkboxContainer-withDescription">
+                            <label class="emby-checkbox-label">
+                                <input id="FetchCelebrityImages" name="FetchCelebrityImages" type="checkbox" is="emby-checkbox" />
+                                <span>在影视页面获取演职员照片</span>
                             </label>
                         </div>
                         <div>
