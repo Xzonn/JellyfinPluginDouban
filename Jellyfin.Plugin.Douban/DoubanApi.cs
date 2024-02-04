@@ -115,6 +115,7 @@ public class DoubanApi
             }
         }
 
+        var infoName = string.IsNullOrEmpty(info.Name) ? "" : info.Name;
         var searchNames = new List<string?>();
         if (searchResults.Count == 0)
         {
@@ -132,7 +133,7 @@ public class DoubanApi
                 {
                     searchNames.Add(seasonInfo.SeriesProviderIds.GetValueOrDefault(MetadataProvider.Imdb.ToString()));
                 }
-                searchNames.Add(info.Name);
+                searchNames.Add(infoName);
                 searchNames.Add(info.OriginalTitle);
                 searchNames.Add(Path.GetFileName(info.Path));
             }
@@ -153,14 +154,14 @@ public class DoubanApi
             searchResults = await SearchMovie(name.Replace(".", " "), token);
             if (searchResults.Count != 0) { break; }
 
-            VideoResolver.TryCleanString(info.Name, new Emby.Naming.Common.NamingOptions(), out var newName);
+            VideoResolver.TryCleanString(infoName, new Emby.Naming.Common.NamingOptions(), out var newName);
             if (!string.IsNullOrEmpty(newName))
             {
                 searchResults = await SearchMovie(newName.Replace(".", " "), token);
                 if (searchResults.Count != 0) { break; }
             }
 
-            newName = AnitomySharp.AnitomySharp.Parse(info.Name).FirstOrDefault(_ => _.Category == AnitomySharp.Element.ElementCategory.ElementAnimeTitle)?.Value;
+            newName = AnitomySharp.AnitomySharp.Parse(infoName).FirstOrDefault(_ => _.Category == AnitomySharp.Element.ElementCategory.ElementAnimeTitle)?.Value;
             if (!string.IsNullOrEmpty(newName))
             {
                 searchResults = await SearchMovie(newName.Replace(".", " "), token);
@@ -168,7 +169,7 @@ public class DoubanApi
             }
         }
 
-        if (searchResults.Count > 0 && ((info is SeriesInfo && !Regex.IsMatch(info.Name, SEASON_PATTERN)) || (info is SeasonInfo seasonInfo2 && seasonInfo2.IndexNumber == 1)))
+        if (searchResults.Count > 0 && ((info is SeriesInfo && !Regex.IsMatch(infoName, SEASON_PATTERN)) || (info is SeasonInfo seasonInfo2 && seasonInfo2.IndexNumber == 1)))
         {
             var season = Regex.Match(searchResults[0].Name!, SEASON_PATTERN);
             if (season.Success && !new string[] { "一", "1" }.Contains(season.Groups[1].Value))
