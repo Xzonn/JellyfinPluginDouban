@@ -56,7 +56,7 @@ public class DoubanApi
         keyword = keyword.Trim();
         if (string.IsNullOrEmpty(keyword)) { return new List<ApiMovieSubject>(); }
 
-        _log.LogDebug($"Searching movie: {keyword}");
+        _log.LogDebug("Searching movie: {keyword}", keyword);
         string url = $"https://www.douban.com/search?cat=1002&q={Uri.EscapeDataString(keyword)}";
         string? responseText = await FetchUrl(url, token);
         if (string.IsNullOrEmpty(responseText)) { return new List<ApiMovieSubject>(); }
@@ -67,7 +67,7 @@ public class DoubanApi
         var resultList = htmlDoc.QuerySelector(".result-list");
         if (resultList == null)
         {
-            _log.LogDebug($"No results found: {keyword}");
+            _log.LogDebug("No results found: {keyword}", keyword);
             return new List<ApiMovieSubject>();
         }
         var results = resultList.ChildNodes.Where(_ => _.HasClass("result")).Select(_ =>
@@ -100,7 +100,7 @@ public class DoubanApi
                 Year = year,
             };
         }).ToList();
-        _log.LogDebug($"{results.Count} result(s) found for: {keyword}, first: {results[0].Name}");
+        _log.LogDebug("{count} result(s) found for: {keyword}, first: {first}", results.Count, keyword, results[0].Name);
         return results;
     }
 
@@ -149,7 +149,7 @@ public class DoubanApi
                 searchNames.Add(Path.GetFileName(info.Path));
             }
         }
-        _log.LogDebug($"Info type: {info.GetType()}, names for searching: {string.Join(", ", searchNames)}");
+        _log.LogDebug("Info type: {type}, names for searching: {names}", info.GetType(), string.Join(", ", searchNames));
 
         foreach (var name in searchNames)
         {
@@ -246,7 +246,7 @@ public class DoubanApi
 
     public async Task<ApiMovieSubject> FetchMovie(string sid, CancellationToken token = default)
     {
-        _log.LogDebug($"Fetching movie: {sid}");
+        _log.LogDebug("Fetching movie: {sid}", sid);
         string url = $"https://movie.douban.com/subject/{sid}/";
         string? responseText = await FetchUrl(url, token);
         if (string.IsNullOrEmpty(responseText)) { return new ApiMovieSubject(); }
@@ -254,7 +254,7 @@ public class DoubanApi
         htmlDoc.LoadHtml(responseText);
 
         var name = HttpUtility.HtmlDecode(Regex.Replace(htmlDoc.QuerySelector("title").InnerText.Trim(), @" \(豆瓣\)$", ""));
-        _log.LogDebug($"Sid {sid} is: {name}");
+        _log.LogDebug("Sid {sid} is: {name}", sid, name);
         var content = htmlDoc.QuerySelector("#content");
         var posterId = Regex.Match(content.QuerySelector("#mainpic img").Attributes["src"].Value, @"/(p\d+)\.(?:webp|png|jpg|jpeg|gif)$").Groups[1].Value;
         var originalName = content.QuerySelector("h1 span").InnerText.Replace(name, "").Trim();
@@ -321,7 +321,7 @@ public class DoubanApi
 
         if (subjectId == 0)
         {
-            _log.LogDebug($"No results found: {info.Name}");
+            _log.LogDebug("No results found: {name}", info.Name);
             return new ApiMovieSubject();
         }
 
@@ -330,7 +330,7 @@ public class DoubanApi
 
     public async Task<List<PersonInfo>> FetchMovieCelebrities(string sid, CancellationToken token = default)
     {
-        _log.LogDebug($"Fetching celebrities for movie: {sid}");
+        _log.LogDebug("Fetching celebrities for movie: {sid}", sid);
         string url = $"https://movie.douban.com/subject/{sid}/celebrities";
         string? responseText = await FetchUrl(url, token);
         if (string.IsNullOrEmpty(responseText)) { return new List<PersonInfo>(); }
@@ -390,7 +390,7 @@ public class DoubanApi
 
     public async Task<List<RemoteImageInfo>> FetchMovieImages(string sid, string type = "R", ImageType imageType = ImageType.Primary, CancellationToken token = default)
     {
-        _log.LogDebug($"Fetching images for movie: {sid}, type: {type}");
+        _log.LogDebug("Fetching images for movie: {sid}, type: {type}", sid, type);
         string url = $"https://movie.douban.com/subject/{sid}/photos?type={type}";
         string? responseText = await FetchUrl(url, token);
         if (string.IsNullOrEmpty(responseText)) { return new List<RemoteImageInfo>(); }
@@ -419,7 +419,7 @@ public class DoubanApi
 
     public async Task<ApiEpisodeSubject> FetchMovieEpisode(string sid, int index, CancellationToken token = default)
     {
-        _log.LogDebug($"Fetching episode: {sid}/{index}");
+        _log.LogDebug("Fetching episode: {sid}/{index}", sid, index);
         string url = $"https://movie.douban.com/subject/{sid}/episode/{index}/";
         string? responseText = await FetchUrl(url, token);
         if (string.IsNullOrEmpty(responseText)) { return new ApiEpisodeSubject(); }
@@ -427,7 +427,7 @@ public class DoubanApi
         htmlDoc.LoadHtml(responseText);
 
         var title = htmlDoc.QuerySelector("title").InnerText.Trim();
-        _log.LogDebug($"Episode {sid}/{index} is: {title}");
+        _log.LogDebug("Episode {sid}/{index} is: {title}", sid, index, title);
         var info = htmlDoc.QuerySelectorAll("#content .ep-info li").Select(_ => _.InnerText.Trim().Split(":\n")).Where(_ => _.Length > 1).ToDictionary(_ => _[0], _ => string.Join(":\n", _[1..]).Trim());
         var name = info!.GetValueOrDefault("本集中文名", "暂无，欢迎添加");
         var originalName = info!.GetValueOrDefault("本集原名", "暂无，欢迎添加");
@@ -451,7 +451,7 @@ public class DoubanApi
         keyword = keyword.Trim();
         if (string.IsNullOrEmpty(keyword)) { return new List<ApiPersonSubject>(); }
 
-        _log.LogDebug($"Searching person: {keyword}");
+        _log.LogDebug("Searching person: {keyword}", keyword);
         string url = $"https://movie.douban.com/j/subject_suggest?q={Uri.EscapeDataString(keyword)}";
         string? responseText = await FetchUrl(url, token);
         if (string.IsNullOrEmpty(responseText)) { return new List<ApiPersonSubject>(); }
@@ -467,14 +467,14 @@ public class DoubanApi
             };
             return result;
         }).ToList();
-        if (results.Count == 0) { _log.LogDebug($"No results found: {keyword}"); }
-        else { _log.LogDebug($"{results.Count} result(s) found for: {keyword}, first: {results[0].Name}"); }
+        if (results.Count == 0) { _log.LogDebug("No results found: {keyword}", keyword); }
+        else { _log.LogDebug("{count} result(s) found for: {keyword}, first: {first}", results.Count, keyword, results[0].Name); }
         return results;
     }
 
     public async Task<ApiPersonSubject> FetchPerson(string cid, CancellationToken token = default)
     {
-        _log.LogDebug($"Fetching celebrity: {cid}");
+        _log.LogDebug("Fetching celebrity: {cid}", cid);
         string url = $"https://movie.douban.com/celebrity/{cid}/";
         string? responseText = await FetchUrl(url, token);
         if (string.IsNullOrEmpty(responseText)) { return new ApiPersonSubject(); }
@@ -484,7 +484,7 @@ public class DoubanApi
         var content = htmlDoc.QuerySelector("#content");
         var image = content.QuerySelector("#headline .pic img");
         var name = image.Attributes["alt"].Value;
-        _log.LogDebug($"Cid {cid} is: {name}");
+        _log.LogDebug("Cid {cid} is: {name}", cid, name);
         var posterUrl = image.Attributes["src"].Value;
         if (posterUrl.Contains("celebrity-default"))
         {
@@ -534,7 +534,7 @@ public class DoubanApi
         {
             if (_caches[url].time > DateTime.Now - TimeSpan.FromDays(1))
             {
-                _log.LogDebug($"Cache hit: {url}");
+                _log.LogDebug("Cache hit: {url}", url);
                 return _caches[url].content;
             }
             else
@@ -546,7 +546,7 @@ public class DoubanApi
         {
             _lastSearch += _timeSpan;
             var delay = _lastSearch - DateTime.Now;
-            _log.LogDebug($"Delay: {delay.TotalMilliseconds} ms");
+            _log.LogDebug("Delay: {delay} ms", delay.TotalMilliseconds);
             await Task.Delay(_lastSearch - DateTime.Now, token).ConfigureAwait(false);
         }
         var message = new HttpRequestMessage(HttpMethod.Get, url);
@@ -555,7 +555,7 @@ public class DoubanApi
         _lastSearch = DateTime.Now;
         if (!response.IsSuccessStatusCode)
         {
-            _log.LogError($"Response: {(int)response.StatusCode} {response.StatusCode}" + (response.StatusCode == System.Net.HttpStatusCode.Forbidden ? ", maybe you need to provide cookie" : ""));
+            _log.LogError("Response: {code} {status}{content}", (int)response.StatusCode, response.StatusCode, response.StatusCode == System.Net.HttpStatusCode.Forbidden ? ", maybe you need to provide cookie" : "");
             return null;
         }
         var responseText = await response.Content.ReadAsStringAsync(token);
