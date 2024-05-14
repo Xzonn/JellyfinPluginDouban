@@ -79,9 +79,16 @@ public class DoubanApi
             var type = _.QuerySelector(".content .title h3 span").InnerText.Trim().TrimStart('[').TrimEnd(']');
             var rating = "0.0";
             if (_.QuerySelector(".rating-info .rating_nums") is HtmlNode __) { rating = __.InnerText.Trim(); }
-            var subjectCast = _.QuerySelector(".rating-info .subject-cast").InnerText.Split("/");
-            var originalName = Regex.Replace(subjectCast[0].Trim(), @"^原名:", "");
-            int.TryParse(subjectCast[^1].Trim(), out int year);
+            var subjectCast = _.QuerySelector(".rating-info .subject-cast")?.InnerText?.Split("/");
+            // 35196946 can not be rated
+            subjectCast ??= _.QuerySelector(".rating-info")?.InnerText?.Split("/");
+            string? originalName = null;
+            int year = 0;
+            if (subjectCast is not null)
+            {
+                originalName = Regex.Replace(subjectCast[0].Trim(), @"^原名:", "");
+                int.TryParse(subjectCast[^1].Trim(), out year);
+            }
             return new ApiMovieSubject()
             {
                 Sid = sid,
@@ -132,6 +139,10 @@ public class DoubanApi
                 if (info is SeasonInfo seasonInfo)
                 {
                     searchNames.Add(seasonInfo.SeriesProviderIds.GetValueOrDefault(MetadataProvider.Imdb.ToString()));
+                }
+                if (info.Year is not null && info.Year > 0)
+                {
+                    searchNames.Add($"{infoName} {info.Year}");
                 }
                 searchNames.Add(infoName);
                 searchNames.Add(info.OriginalTitle);
@@ -196,7 +207,7 @@ public class DoubanApi
         return results;
     }
 
-    public int TryParseDoubanId(ItemLookupInfo info)
+    public static int TryParseDoubanId(ItemLookupInfo info)
     {
         int subjectId;
         if (info is EpisodeInfo episodeInfo)
@@ -554,8 +565,7 @@ public class DoubanApi
 
     private static int ConvertChineseNumberToNumber(string chinese)
     {
-        int result;
-        if (int.TryParse(chinese, out result)) { return result; }
+        if (int.TryParse(chinese, out int result)) { return result; }
         int unit = 1;
         for (int i = chinese.Length - 1; i > -1; --i)
         {

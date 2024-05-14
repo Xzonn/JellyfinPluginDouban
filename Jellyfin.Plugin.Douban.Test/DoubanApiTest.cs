@@ -43,6 +43,13 @@ namespace Jellyfin.Plugin.Douban.Test
             Assert.NotEmpty(list);
             Assert.Equal("33400537", list[0].GetProviderId(Constants.ProviderId));
 
+            list = _doubanApi.GetMovieSearchResults(new SeriesInfo()
+            {
+                Name = "ИэМе 2024",
+            }).Result;
+            Assert.NotEmpty(list);
+            Assert.Equal("35196946", list[0].GetProviderId(Constants.ProviderId));
+
             list = _doubanApi.GetMovieSearchResults(new SeasonInfo()
             {
                 Name = "Ве»щ",

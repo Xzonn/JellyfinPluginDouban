@@ -3,3 +3,5 @@ end_of_line = lf
 insert_final_newline = true
 tab_width = 4
 indent_size = 4
+
+dotnet_diagnostic.CA1806.severity = silent
