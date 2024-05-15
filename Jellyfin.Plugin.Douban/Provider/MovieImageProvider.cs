@@ -9,23 +9,15 @@ using Microsoft.Extensions.Logging;
 
 namespace Jellyfin.Plugin.Douban.Provider;
 
-public class MovieImageProvider : IRemoteImageProvider, IHasOrder
+public class MovieImageProvider(DoubanApi api, ILogger<MovieImageProvider> logger) : IRemoteImageProvider, IHasOrder
 {
-    private readonly DoubanApi _api;
-    private readonly ILogger<MovieImageProvider> _log;
-    private static PluginConfiguration _configuration
+    private static PluginConfiguration Configuration
     {
         get
         {
             if (Plugin.Instance != null) { return Plugin.Instance.Configuration; }
             return new PluginConfiguration();
         }
-    }
-
-    public MovieImageProvider(DoubanApi api, ILogger<MovieImageProvider> logger)
-    {
-        _api = api;
-        _log = logger;
     }
 
     public int Order => 0;
@@ -38,7 +30,7 @@ public class MovieImageProvider : IRemoteImageProvider, IHasOrder
 
     public IEnumerable<ImageType> GetSupportedImages(BaseItem item)
     {
-        return new[] { ImageType.Primary, ImageType.Backdrop };
+        return [ImageType.Primary, ImageType.Backdrop];
     }
 
     public async Task<IEnumerable<RemoteImageInfo>> GetImages(BaseItem item, CancellationToken token)
@@ -51,7 +43,7 @@ public class MovieImageProvider : IRemoteImageProvider, IHasOrder
             return images;
         }
 
-        var subject = await _api.FetchMovie(id.ToString(), token);
+        var subject = await api.FetchMovie(id.ToString(), token);
 
         if (!string.IsNullOrEmpty(subject.PosterId))
         {
@@ -59,9 +51,9 @@ public class MovieImageProvider : IRemoteImageProvider, IHasOrder
             {
                 ProviderName = Constants.PluginName,
                 Language = Constants.Language,
-                ThumbnailUrl = $"{_configuration.CdnServer}/view/photo/s/public/{subject.PosterId}.jpg",
+                ThumbnailUrl = $"{Configuration.CdnServer}/view/photo/s/public/{subject.PosterId}.jpg",
                 Type = ImageType.Primary,
-                Url = $"{_configuration.CdnServer}/view/photo/l/public/{subject.PosterId}.jpg",
+                Url = $"{Configuration.CdnServer}/view/photo/l/public/{subject.PosterId}.jpg",
             };
             images.Add(image);
         }
@@ -70,13 +62,13 @@ public class MovieImageProvider : IRemoteImageProvider, IHasOrder
             ["R"] = ImageType.Primary,
             ["W"] = ImageType.Backdrop,
         };
-        if(Plugin.Instance!.Configuration.FetchStagePhoto)
+        if (Plugin.Instance!.Configuration.FetchStagePhoto)
         {
             dict["S"] = ImageType.Backdrop;
         }
         foreach (var _ in dict)
         {
-            (await _api.FetchMovieImages(id.ToString(), _.Key, _.Value, token)).ForEach(__ => images.Add(__));
+            (await api.FetchMovieImages(id.ToString(), _.Key, _.Value, token)).ForEach(__ => images.Add(__));
         }
 
         return images;
@@ -84,7 +76,7 @@ public class MovieImageProvider : IRemoteImageProvider, IHasOrder
 
     public async Task<HttpResponseMessage> GetImageResponse(string url, CancellationToken token)
     {
-        _log.LogDebug($"Fetching image: {url}");
-        return await _api.GetHttpClient().GetAsync(url, token).ConfigureAwait(false);
+        logger.LogDebug("Fetching image: {url}", url);
+        return await api.GetHttpClient().GetAsync(url, token).ConfigureAwait(false);
     }
 }

@@ -18,9 +18,11 @@ public class Constants
 
     public const string Language = "zh";
 
-    public static JsonSerializerOptions JsonSerializerOptions = new JsonSerializerOptions
+#pragma warning disable CA2211 // 非常量字段应当不可见
+    public static JsonSerializerOptions JsonSerializerOptions = new()
     {
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
     };
+#pragma warning restore CA2211 // 非常量字段应当不可见
 }

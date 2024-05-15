@@ -13,7 +13,7 @@ using System.Web;
 
 namespace Jellyfin.Plugin.Douban;
 
-public class DoubanApi
+public partial class DoubanApi
 {
     private struct Cache
     {
@@ -21,16 +21,28 @@ public class DoubanApi
         public DateTime time;
     }
 
-    private const string SEASON_PATTERN = @"第([一二三四五六七八九十百千万\d]+)[季期]";
+    private static readonly string[] ONES = ["一", "1"];
+
+    private static Regex REGEX_SID => new(@"\s*sid:\s*(\d+)");
+    private static Regex REGEX_IMAGE => new(@"/(p\d+)\.(?:webp|png|jpg|jpeg|gif)$");
+    private static Regex REGEX_IMAGE_URL => new(@"url\((.+?\.(?:webp|png|jpg|jpeg|gif))\)");
+    private static Regex REGEX_ORIGINAL_NAME => new(@"^原名:");
+    private static Regex REGEX_AUTOMATIC_SEASON_NAME => new(@"^(?:第 \d+ 季|Season \d+|未知季|Season Unknown|Specials)$");
+    private static Regex REGEX_SEASON => new(@"第([一二三四五六七八九十百千万\d]+)[季期]");
+    private static Regex REGEX_DOUBAN_POSTFIX => new(@" \(豆瓣\)$");
+    private static Regex REGEX_BRACKET => new(@"\(.+?\)?$");
+    private static Regex REGEX_DATE => new(@"\d{4}-\d\d-\d\d");
+    private static Regex REGEX_CELEBRITY => new(@"/celebrity/(\d+)/");
+    private static Regex REGEX_DOUBANIO_HOST => new(@"https?://img\d+\.doubanio.com");
 
     private readonly HttpClient _httpClient;
     public HttpClient GetHttpClient() => _httpClient;
     private readonly ILogger<DoubanApi> _log;
-    private static DateTime _lastSearch = DateTime.MinValue;
-    private TimeSpan _timeSpan => TimeSpan.FromMilliseconds(_configuration.RequestTimeSpan);
-    private static DateTime _cacheLastClean = DateTime.MinValue;
-    private readonly Dictionary<string, Cache> _caches;
-    private static PluginConfiguration _configuration
+    private static DateTime LastSearch = DateTime.MinValue;
+    private static TimeSpan TimeSpan => TimeSpan.FromMilliseconds(Configuration.RequestTimeSpan);
+    private static DateTime CacheLastClean = DateTime.MinValue;
+    private readonly Dictionary<string, Cache> Caches;
+    private static PluginConfiguration Configuration
     {
         get
         {
@@ -38,6 +50,7 @@ public class DoubanApi
             return new PluginConfiguration();
         }
     }
+
 
     public DoubanApi(IHttpClientFactory httpClientFactory, ILogger<DoubanApi> log)
     {
@@ -47,19 +60,19 @@ public class DoubanApi
         _httpClient.DefaultRequestHeaders.Add("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8");
         _httpClient.Timeout = TimeSpan.FromSeconds(5);
         _log = log;
-        _cacheLastClean = DateTime.Now;
-        _caches = new Dictionary<string, Cache>();
+        CacheLastClean = DateTime.Now;
+        Caches = [];
     }
 
     public async Task<List<ApiMovieSubject>> SearchMovie(string keyword, CancellationToken token = default)
     {
         keyword = keyword.Trim();
-        if (string.IsNullOrEmpty(keyword)) { return new List<ApiMovieSubject>(); }
+        if (string.IsNullOrEmpty(keyword)) { return []; }
 
         _log.LogDebug("Searching movie: {keyword}", keyword);
         string url = $"https://www.douban.com/search?cat=1002&q={Uri.EscapeDataString(keyword)}";
         string? responseText = await FetchUrl(url, token);
-        if (string.IsNullOrEmpty(responseText)) { return new List<ApiMovieSubject>(); }
+        if (string.IsNullOrEmpty(responseText)) { return []; }
 
         var htmlDoc = new HtmlDocument();
         htmlDoc.LoadHtml(responseText);
@@ -68,14 +81,14 @@ public class DoubanApi
         if (resultList == null)
         {
             _log.LogDebug("No results found: {keyword}", keyword);
-            return new List<ApiMovieSubject>();
+            return [];
         }
         var results = resultList.ChildNodes.Where(_ => _.HasClass("result")).Select(_ =>
         {
             var link = _.QuerySelector(".content .title h3 a");
-            var sid = Regex.Match(link.Attributes["onclick"].Value, @"\s*sid:\s*(\d+)").Groups[1].Value;
+            var sid = REGEX_SID.Match(link.Attributes["onclick"].Value).Groups[1].Value;
             var name = link.InnerText.Trim();
-            var posterId = Regex.Match(_.QuerySelector(".pic img").Attributes["src"].Value, @"/(p\d+)\.(?:webp|png|jpg|jpeg|gif)$").Groups[1].Value;
+            var posterId = REGEX_IMAGE.Match(_.QuerySelector(".pic img").Attributes["src"].Value).Groups[1].Value;
             var type = _.QuerySelector(".content .title h3 span").InnerText.Trim().TrimStart('[').TrimEnd(']');
             var rating = "0.0";
             if (_.QuerySelector(".rating-info .rating_nums") is HtmlNode __) { rating = __.InnerText.Trim(); }
@@ -86,7 +99,7 @@ public class DoubanApi
             int year = 0;
             if (subjectCast is not null)
             {
-                originalName = Regex.Replace(subjectCast[0].Trim(), @"^原名:", "");
+                originalName = REGEX_ORIGINAL_NAME.Replace(subjectCast[0].Trim(), "");
                 int.TryParse(subjectCast[^1].Trim(), out year);
             }
             return new ApiMovieSubject()
@@ -122,7 +135,7 @@ public class DoubanApi
             }
         }
 
-        var infoName = string.IsNullOrEmpty(info.Name) ? "" : info.Name;
+        var infoName = (string.IsNullOrEmpty(info.Name) || REGEX_AUTOMATIC_SEASON_NAME.IsMatch(info.Name)) ? "" : info.Name;
         var searchNames = new List<string?>();
         if (searchResults.Count == 0)
         {
@@ -140,11 +153,14 @@ public class DoubanApi
                 {
                     searchNames.Add(seasonInfo.SeriesProviderIds.GetValueOrDefault(MetadataProvider.Imdb.ToString()));
                 }
-                if (info.Year is not null && info.Year > 0)
+                if (!string.IsNullOrEmpty(infoName))
                 {
-                    searchNames.Add($"{infoName} {info.Year}");
+                    if (info.Year is not null && info.Year > 0)
+                    {
+                        searchNames.Add($"{infoName} {info.Year}");
+                    }
+                    searchNames.Add(infoName);
                 }
-                searchNames.Add(infoName);
                 searchNames.Add(info.OriginalTitle);
                 searchNames.Add(Path.GetFileName(info.Path));
             }
@@ -156,7 +172,7 @@ public class DoubanApi
             if (
                 string.IsNullOrWhiteSpace(name) ||
                 // Season name is auto-generated, no need to search
-                ((info is SeasonInfo || info is EpisodeInfo) && Regex.IsMatch(name, @"^(?:第 \d+ 季|Season \d+|未知季|Season Unknown|Specials)$"))
+                ((info is SeasonInfo || info is EpisodeInfo) && REGEX_AUTOMATIC_SEASON_NAME.IsMatch(name))
                 )
             {
                 continue;
@@ -180,22 +196,22 @@ public class DoubanApi
             }
         }
 
-        if (searchResults.Count > 0 && ((info is SeriesInfo && !Regex.IsMatch(infoName, SEASON_PATTERN)) || (info is SeasonInfo seasonInfo2 && seasonInfo2.IndexNumber == 1)))
+        if (searchResults.Count > 0 && ((info is SeriesInfo && !REGEX_SEASON.IsMatch(infoName)) || (info is SeasonInfo seasonInfo2 && seasonInfo2.IndexNumber == 1)))
         {
-            var season = Regex.Match(searchResults[0].Name!, SEASON_PATTERN);
-            if (season.Success && !new string[] { "一", "1" }.Contains(season.Groups[1].Value))
+            var season = REGEX_SEASON.Match(searchResults[0].Name!);
+            if (season.Success && !ONES.Contains(season.Groups[1].Value))
             {
-                searchResults = await SearchMovie(Regex.Replace(searchResults[0].Name!, SEASON_PATTERN, "第一季"), token);
+                searchResults = await SearchMovie(REGEX_SEASON.Replace(searchResults[0].Name!, "第一季"), token);
             }
         }
-        searchResults = searchResults.OrderBy(_ => _.Type == (info is MovieInfo ? "电影" : "电视剧") ? 0 : 1).ToList();
+        searchResults = [.. searchResults.OrderBy(_ => _.Type == (info is MovieInfo ? "电影" : "电视剧") ? 0 : 1)];
         var results = searchResults.Select(_ =>
         {
             var result = new RemoteSearchResult
             {
                 Name = _.Name,
                 SearchProviderName = _.OriginalName,
-                ImageUrl = string.IsNullOrEmpty(_.PosterId) ? "" : $"{_configuration.CdnServer}/view/photo/l/public/{_.PosterId}.jpg",
+                ImageUrl = string.IsNullOrEmpty(_.PosterId) ? "" : $"{Configuration.CdnServer}/view/photo/l/public/{_.PosterId}.jpg",
                 Overview = _.Intro,
                 ProductionYear = _.Year,
                 PremiereDate = _.ScreenTime,
@@ -253,10 +269,10 @@ public class DoubanApi
         var htmlDoc = new HtmlDocument();
         htmlDoc.LoadHtml(responseText);
 
-        var name = HttpUtility.HtmlDecode(Regex.Replace(htmlDoc.QuerySelector("title").InnerText.Trim(), @" \(豆瓣\)$", ""));
+        var name = HttpUtility.HtmlDecode(REGEX_DOUBAN_POSTFIX.Replace(htmlDoc.QuerySelector("title").InnerText.Trim(), ""));
         _log.LogDebug("Sid {sid} is: {name}", sid, name);
         var content = htmlDoc.QuerySelector("#content");
-        var posterId = Regex.Match(content.QuerySelector("#mainpic img").Attributes["src"].Value, @"/(p\d+)\.(?:webp|png|jpg|jpeg|gif)$").Groups[1].Value;
+        var posterId = REGEX_IMAGE.Match(content.QuerySelector("#mainpic img").Attributes["src"].Value).Groups[1].Value;
         var originalName = content.QuerySelector("h1 span").InnerText.Replace(name, "").Trim();
         var year = Convert.ToInt32(content.QuerySelector("h1 .year").InnerText.Trim().TrimStart('(').TrimEnd(')'));
         var rating = content.QuerySelector("#interest_sectl .rating_num").InnerText.Trim();
@@ -264,12 +280,12 @@ public class DoubanApi
         var info = content.QuerySelector("#info").InnerText.Trim().Split("\n").Select(_ => _.Trim().Split(": ")).Where(_ => _.Length > 1).ToDictionary(_ => _[0], _ => string.Join(": ", _[1..]).Trim());
         var type = "电影";
         if (info.ContainsKey("集数") || info.ContainsKey("单集片长")) { type = "电视剧"; }
-        var intro = string.Join("\n", (content.QuerySelector("#link-report-intra span.all") ?? content.QuerySelector("#link-report-intra span"))?.InnerText.Trim().Split("\n").Select(_ => _.Trim()) ?? Array.Empty<string>());
-        var screenTime = info!.GetValueOrDefault("上映日期", info!.GetValueOrDefault("首播", ""))!.Split("/").Select(_ => Regex.Replace(_.Trim(), @"\(.+?\)?$", "")).Where(_ => Regex.IsMatch(_, @"\d{4}-\d\d-\d\d")).FirstOrDefault();
+        var intro = string.Join("\n", (content.QuerySelector("#link-report-intra span.all") ?? content.QuerySelector("#link-report-intra span"))?.InnerText.Trim().Split("\n").Select(_ => _.Trim()) ?? []);
+        var screenTime = info!.GetValueOrDefault("上映日期", info!.GetValueOrDefault("首播", ""))!.Split("/").Select(_ => REGEX_BRACKET.Replace(_.Trim(), "")).Where(_ => REGEX_DATE.IsMatch(_)).FirstOrDefault();
         var seasonIndex = 0;
-        if (info.ContainsKey("季数"))
+        if (info.TryGetValue("季数", out string? seasonNumber))
         {
-            seasonIndex = Convert.ToInt32(info["季数"]);
+            seasonIndex = Convert.ToInt32(seasonNumber);
         }
         else if (content.QuerySelector("#season option[selected]") is HtmlNode selected)
         {
@@ -278,9 +294,9 @@ public class DoubanApi
         else if (type == "电视剧")
         {
             seasonIndex = 1;
-            if (Regex.IsMatch(name, SEASON_PATTERN))
+            if (REGEX_SEASON.IsMatch(name))
             {
-                seasonIndex = ConvertChineseNumberToNumber(Regex.Match(name, SEASON_PATTERN).Groups[1].Value);
+                seasonIndex = ConvertChineseNumberToNumber(REGEX_SEASON.Match(name).Groups[1].Value);
             }
         }
         int.TryParse(info!.GetValueOrDefault("集数", "0"), out var episodeCount);
@@ -333,7 +349,7 @@ public class DoubanApi
         _log.LogDebug("Fetching celebrities for movie: {sid}", sid);
         string url = $"https://movie.douban.com/subject/{sid}/celebrities";
         string? responseText = await FetchUrl(url, token);
-        if (string.IsNullOrEmpty(responseText)) { return new List<PersonInfo>(); }
+        if (string.IsNullOrEmpty(responseText)) { return []; }
         var htmlDoc = new HtmlDocument();
         htmlDoc.LoadHtml(responseText);
 
@@ -342,17 +358,17 @@ public class DoubanApi
         {
             var link = _.QuerySelector("a.name");
             var name = link.InnerText.Trim().Split(" ")[0];
-            var cid = Regex.Match(link.Attributes["href"].Value, @"/celebrity/(\d+)/").Groups[1].Value;
-            var posterUrl = Regex.Match(_.QuerySelector(".avatar").Attributes["style"].Value, @"url\((.+?\.(?:webp|png|jpg|jpeg|gif))\)").Groups[1].Value;
-            if (!_configuration.FetchCelebrityImages || posterUrl.Contains("celebrity-default"))
+            var cid = REGEX_CELEBRITY.Match(link.Attributes["href"].Value).Groups[1].Value;
+            var posterUrl = REGEX_IMAGE_URL.Match(_.QuerySelector(".avatar").Attributes["style"].Value).Groups[1].Value;
+            if (!Configuration.FetchCelebrityImages || posterUrl.Contains("celebrity-default"))
             {
                 posterUrl = null;
             }
             else
             {
-                posterUrl = Regex.Replace(posterUrl, @"https?://img\d+\.doubanio.com", _configuration.CdnServer);
+                posterUrl = REGEX_DOUBANIO_HOST.Replace(posterUrl, Configuration.CdnServer);
             }
-            var roleText = new string[] { "" };
+            var roleText = Array.Empty<string>();
             if (_.QuerySelector(".role") is HtmlNode __) { roleText = __.InnerText.Trim().Split(" "); }
             var type = roleText[0];
             var role = "";
@@ -393,13 +409,13 @@ public class DoubanApi
         _log.LogDebug("Fetching images for movie: {sid}, type: {type}", sid, type);
         string url = $"https://movie.douban.com/subject/{sid}/photos?type={type}";
         string? responseText = await FetchUrl(url, token);
-        if (string.IsNullOrEmpty(responseText)) { return new List<RemoteImageInfo>(); }
+        if (string.IsNullOrEmpty(responseText)) { return []; }
         var htmlDoc = new HtmlDocument();
         htmlDoc.LoadHtml(responseText);
 
         var results = htmlDoc.QuerySelectorAll(".article ul li").Select(_ =>
         {
-            var posterId = Regex.Match(_.QuerySelector("img").Attributes["src"].Value, @"/(p\d+)\.(?:webp|png|jpg|jpeg|gif)$").Groups[1].Value;
+            var posterId = REGEX_IMAGE.Match(_.QuerySelector("img").Attributes["src"].Value).Groups[1].Value;
             var size = _.QuerySelector(".prop").InnerText.Trim().Split("x");
             var width = Convert.ToInt32(size[0]);
             var height = Convert.ToInt32(size[1]);
@@ -407,9 +423,9 @@ public class DoubanApi
             {
                 ProviderName = Constants.PluginName,
                 Language = Constants.Language,
-                Type = _configuration.DistinguishUsingAspectRatio ? (width > height ? ImageType.Backdrop : ImageType.Primary) : imageType,
-                ThumbnailUrl = $"{_configuration.CdnServer}/view/photo/s/public/{posterId}.jpg",
-                Url = $"{_configuration.CdnServer}/view/photo/l/public/{posterId}.jpg",
+                Type = Configuration.DistinguishUsingAspectRatio ? (width > height ? ImageType.Backdrop : ImageType.Primary) : imageType,
+                ThumbnailUrl = $"{Configuration.CdnServer}/view/photo/s/public/{posterId}.jpg",
+                Url = $"{Configuration.CdnServer}/view/photo/l/public/{posterId}.jpg",
                 Width = width,
                 Height = height,
             };
@@ -449,12 +465,12 @@ public class DoubanApi
     public async Task<List<ApiPersonSubject>> SearchPerson(string keyword, CancellationToken token = default)
     {
         keyword = keyword.Trim();
-        if (string.IsNullOrEmpty(keyword)) { return new List<ApiPersonSubject>(); }
+        if (string.IsNullOrEmpty(keyword)) { return []; }
 
         _log.LogDebug("Searching person: {keyword}", keyword);
         string url = $"https://movie.douban.com/j/subject_suggest?q={Uri.EscapeDataString(keyword)}";
         string? responseText = await FetchUrl(url, token);
-        if (string.IsNullOrEmpty(responseText)) { return new List<ApiPersonSubject>(); }
+        if (string.IsNullOrEmpty(responseText)) { return []; }
 
         var results = JsonSerializer.Deserialize<List<ResultItem>>(responseText)!.Where(_ => _.type == "celebrity").Select(_ =>
         {
@@ -492,17 +508,17 @@ public class DoubanApi
         }
         else
         {
-            posterUrl = Regex.Replace(posterUrl, @"https?://img\d+\.doubanio.com", _configuration.CdnServer);
+            posterUrl = REGEX_DOUBANIO_HOST.Replace(posterUrl, Configuration.CdnServer);
         }
         var originalName = content.QuerySelector("h1").InnerText.Replace(name, "").Trim();
         var info = content.QuerySelectorAll(".info ul li").Select(_ => _.InnerText.Trim().Split(": ")).Where(_ => _.Length > 1).ToDictionary(_ => _[0], _ => string.Join(": ", _[1..]).Trim());
-        var intro = string.Join("\n", (content.QuerySelector("#intro .bd .all") ?? content.QuerySelector("#intro .bd"))?.InnerText.Trim().Split("\n").Select(_ => _.Trim()) ?? Array.Empty<string>());
+        var intro = string.Join("\n", (content.QuerySelector("#intro .bd .all") ?? content.QuerySelector("#intro .bd"))?.InnerText.Trim().Split("\n").Select(_ => _.Trim()) ?? []);
         var birthdate = info!.GetValueOrDefault("出生日期", null);
         var deathdate = "";
-        if (info.ContainsKey("生卒日期"))
+        if (info.TryGetValue("生卒日期", out string? birthAndDeath))
         {
-            birthdate = info["生卒日期"].Split("至")[0].Trim();
-            deathdate = info["生卒日期"].Split("至")[1].Trim();
+            birthdate = birthAndDeath.Split("至")[0].Trim();
+            deathdate = birthAndDeath.Split("至")[1].Trim();
         }
         var bitrhplace = info!.GetValueOrDefault("出生地", null);
         var result = new ApiPersonSubject()
@@ -515,7 +531,7 @@ public class DoubanApi
             Gender = info!.GetValueOrDefault("性别", null),
             Birthdate = string.IsNullOrEmpty(birthdate) ? null : Convert.ToDateTime(birthdate),
             Deathdate = string.IsNullOrEmpty(deathdate) ? null : Convert.ToDateTime(deathdate),
-            Birthplace = string.IsNullOrEmpty(bitrhplace) ? null : new string[] { bitrhplace },
+            Birthplace = string.IsNullOrEmpty(bitrhplace) ? null : [bitrhplace],
             Website = info!.GetValueOrDefault("官方网站", null),
             ImdbId = info!.GetValueOrDefault("imdb编号", null),
         };
@@ -524,42 +540,42 @@ public class DoubanApi
 
     private async Task<string?> FetchUrl(string url, CancellationToken token = default)
     {
-        if (_caches.Count > 0 && _cacheLastClean < DateTime.Now - TimeSpan.FromDays(1))
+        if (Caches.Count > 0 && CacheLastClean < DateTime.Now - TimeSpan.FromDays(1))
         {
             _log.LogDebug($"Removing expired cache");
-            _caches.Where(_ => _.Value.time < DateTime.Now - TimeSpan.FromDays(1)).ToList().ForEach(_ => _caches.Remove(_.Key));
-            _cacheLastClean = DateTime.Now;
+            Caches.Where(_ => _.Value.time < DateTime.Now - TimeSpan.FromDays(1)).ToList().ForEach(_ => Caches.Remove(_.Key));
+            CacheLastClean = DateTime.Now;
         }
-        if (_caches.ContainsKey(url))
+        if (Caches.TryGetValue(url, out Cache cache))
         {
-            if (_caches[url].time > DateTime.Now - TimeSpan.FromDays(1))
+            if (cache.time > DateTime.Now - TimeSpan.FromDays(1))
             {
                 _log.LogDebug("Cache hit: {url}", url);
-                return _caches[url].content;
+                return cache.content;
             }
             else
             {
-                _caches.Remove(url);
+                Caches.Remove(url);
             }
         }
-        if (DateTime.Now < _lastSearch + _timeSpan)
+        if (DateTime.Now < LastSearch + TimeSpan)
         {
-            _lastSearch += _timeSpan;
-            var delay = _lastSearch - DateTime.Now;
+            LastSearch += TimeSpan;
+            var delay = LastSearch - DateTime.Now;
             _log.LogDebug("Delay: {delay} ms", delay.TotalMilliseconds);
-            await Task.Delay(_lastSearch - DateTime.Now, token).ConfigureAwait(false);
+            await Task.Delay(LastSearch - DateTime.Now, token).ConfigureAwait(false);
         }
         var message = new HttpRequestMessage(HttpMethod.Get, url);
-        message.Headers.Add("Cookie", _configuration.DoubanCookie);
+        message.Headers.Add("Cookie", Configuration.DoubanCookie);
         var response = await _httpClient.SendAsync(message, token).ConfigureAwait(false);
-        _lastSearch = DateTime.Now;
+        LastSearch = DateTime.Now;
         if (!response.IsSuccessStatusCode)
         {
             _log.LogError("Response: {code} {status}{content}", (int)response.StatusCode, response.StatusCode, response.StatusCode == System.Net.HttpStatusCode.Forbidden ? ", maybe you need to provide cookie" : "");
             return null;
         }
         var responseText = await response.Content.ReadAsStringAsync(token);
-        _caches[url] = new Cache() { content = responseText, time = DateTime.Now };
+        Caches[url] = new Cache() { content = responseText, time = DateTime.Now };
         return responseText;
     }
 

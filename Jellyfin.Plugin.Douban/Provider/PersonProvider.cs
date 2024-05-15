@@ -8,24 +8,15 @@ using System.Text.Json;
 
 namespace Jellyfin.Plugin.Douban.Provider;
 
-public class PersonProvider : IRemoteMetadataProvider<Person, PersonLookupInfo>, IHasOrder
+public class PersonProvider(DoubanApi api, ILogger<PersonProvider> logger) : IRemoteMetadataProvider<Person, PersonLookupInfo>, IHasOrder
 {
-    private readonly DoubanApi _api;
-    private readonly ILogger<PersonProvider> _log;
-
-    public PersonProvider(DoubanApi api, ILogger<PersonProvider> logger)
-    {
-        _api = api;
-        _log = logger;
-    }
-
     public int Order => 0;
     public string Name => Constants.ProviderName;
 
     public async Task<MetadataResult<Person>> GetMetadata(PersonLookupInfo info, CancellationToken token)
     {
         token.ThrowIfCancellationRequested();
-        _log.LogDebug($"PersonLookupInfo: {JsonSerializer.Serialize(info, options: Constants.JsonSerializerOptions)}");
+        logger.LogDebug("PersonLookupInfo: {info}", JsonSerializer.Serialize(info, options: Constants.JsonSerializerOptions));
         var result = new MetadataResult<Person> { ResultLanguage = Constants.Language };
         if (!int.TryParse(info.ProviderIds.GetValueOrDefault(Constants.ProviderId), out var personId))
         {
@@ -46,7 +37,7 @@ public class PersonProvider : IRemoteMetadataProvider<Person, PersonLookupInfo>,
 
         if (personId == 0) { return result; }
 
-        var person = await _api.FetchPerson(personId.ToString(), token);
+        var person = await api.FetchPerson(personId.ToString(), token);
         if (string.IsNullOrEmpty(person.Cid)) { return result; }
         result.Item = new Person
         {
@@ -74,7 +65,7 @@ public class PersonProvider : IRemoteMetadataProvider<Person, PersonLookupInfo>,
 
         if (int.TryParse(searchInfo.ProviderIds.GetValueOrDefault(Constants.ProviderId), out var id) || int.TryParse(searchInfo.ProviderIds.GetValueOrDefault(Constants.OddbId), out id))
         {
-            var subject = await _api.FetchPerson(id.ToString(), token);
+            var subject = await api.FetchPerson(id.ToString(), token);
             if (subject != null)
             {
                 searchResults.Add(subject);
@@ -82,11 +73,11 @@ public class PersonProvider : IRemoteMetadataProvider<Person, PersonLookupInfo>,
         }
         else if (searchInfo.GetProviderId(MetadataProvider.Imdb) is string imdbId)
         {
-            searchResults = await _api.SearchPerson(imdbId, token);
+            searchResults = await api.SearchPerson(imdbId, token);
         }
         else if (!string.IsNullOrEmpty(searchInfo.Name))
         {
-            searchResults = await _api.SearchPerson(searchInfo.Name, token);
+            searchResults = await api.SearchPerson(searchInfo.Name, token);
         }
         var results = searchResults.Select(_ =>
         {
@@ -105,7 +96,7 @@ public class PersonProvider : IRemoteMetadataProvider<Person, PersonLookupInfo>,
 
     public async Task<HttpResponseMessage> GetImageResponse(string url, CancellationToken token)
     {
-        _log.LogDebug($"Fetching image: {url}");
-        return await _api.GetHttpClient().GetAsync(url, token).ConfigureAwait(false);
+        logger.LogDebug("Fetching image: {url}", url);
+        return await api.GetHttpClient().GetAsync(url, token).ConfigureAwait(false);
     }
 }

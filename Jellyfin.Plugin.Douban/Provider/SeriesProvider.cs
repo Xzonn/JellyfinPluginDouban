@@ -7,27 +7,18 @@ using System.Text.Json;
 
 namespace Jellyfin.Plugin.Douban.Provider;
 
-public class SeriesProvider : IRemoteMetadataProvider<Series, SeriesInfo>, IHasOrder
+public class SeriesProvider(DoubanApi api, ILogger<SeriesProvider> logger) : IRemoteMetadataProvider<Series, SeriesInfo>, IHasOrder
 {
-    private readonly DoubanApi _api;
-    private readonly ILogger<SeriesProvider> _log;
-
-    public SeriesProvider(DoubanApi api, ILogger<SeriesProvider> logger)
-    {
-        _api = api;
-        _log = logger;
-    }
-
     public int Order => 0;
     public string Name => Constants.ProviderName;
 
     public async Task<MetadataResult<Series>> GetMetadata(SeriesInfo info, CancellationToken token)
     {
         token.ThrowIfCancellationRequested();
-        _log.LogDebug($"SeriesInfo: {JsonSerializer.Serialize(info, options: Constants.JsonSerializerOptions)}");
+        logger.LogDebug("SeriesInfo: {info}", JsonSerializer.Serialize(info, options: Constants.JsonSerializerOptions));
         var result = new MetadataResult<Series> { ResultLanguage = Constants.Language };
 
-        var subject = await _api.FetchMovie(info, token);
+        var subject = await api.FetchMovie(info, token);
         if (string.IsNullOrEmpty(subject.Sid)) { return result; }
 
         result.Item = new Series()
@@ -47,27 +38,27 @@ public class SeriesProvider : IRemoteMetadataProvider<Series, SeriesInfo>, IHasO
         if (subject.ScreenTime != null)
         {
             result.Item.AirTime = subject.ScreenTime?.ToString("yyyy-MM-dd");
-            result.Item.AirDays = new[] { (subject.ScreenTime ?? new DateTime()).DayOfWeek };
+            result.Item.AirDays = [(subject.ScreenTime ?? new DateTime()).DayOfWeek];
         }
         result.Item.SetProviderId(Constants.ProviderId, subject.Sid);
         if (!string.IsNullOrEmpty(subject.ImdbId)) { result.Item.SetProviderId(MetadataProvider.Imdb, subject.ImdbId); }
         result.QueriedById = true;
         result.HasMetadata = true;
 
-        (await _api.FetchMovieCelebrities(subject.Sid!, token)).ForEach(_ => result.AddPerson(_));
+        (await api.FetchMovieCelebrities(subject.Sid!, token)).ForEach(_ => result.AddPerson(_));
 
         return result;
     }
 
     public async Task<IEnumerable<RemoteSearchResult>> GetSearchResults(SeriesInfo info, CancellationToken token)
     {
-        _log.LogDebug($"SeriesInfo: {JsonSerializer.Serialize(info, options: Constants.JsonSerializerOptions)}");
-        return await _api.GetMovieSearchResults(info, true, token);
+        logger.LogDebug("SeriesInfo: {info}", JsonSerializer.Serialize(info, options: Constants.JsonSerializerOptions));
+        return await api.GetMovieSearchResults(info, true, token);
     }
 
     public async Task<HttpResponseMessage> GetImageResponse(string url, CancellationToken token)
     {
-        _log.LogDebug($"Fetching image: {url}");
-        return await _api.GetHttpClient().GetAsync(url, token).ConfigureAwait(false);
+        logger.LogDebug("Fetching image: {url}", url);
+        return await api.GetHttpClient().GetAsync(url, token).ConfigureAwait(false);
     }
 }

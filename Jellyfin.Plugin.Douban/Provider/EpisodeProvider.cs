@@ -8,27 +8,18 @@ using System.Text.Json;
 
 namespace Jellyfin.Plugin.Douban.Provider;
 
-public class EpisodeProvider : IRemoteMetadataProvider<Episode, EpisodeInfo>, IHasOrder
+public class EpisodeProvider(DoubanApi api, ILogger<EpisodeProvider> logger) : IRemoteMetadataProvider<Episode, EpisodeInfo>, IHasOrder
 {
-    private readonly DoubanApi _api;
-    private readonly ILogger<EpisodeProvider> _log;
-
-    public EpisodeProvider(DoubanApi api, ILogger<EpisodeProvider> logger)
-    {
-        _api = api;
-        _log = logger;
-    }
-
     public int Order => 0;
     public string Name => Constants.ProviderName;
 
     public async Task<MetadataResult<Episode>> GetMetadata(EpisodeInfo info, CancellationToken token)
     {
         token.ThrowIfCancellationRequested();
-        _log.LogDebug($"EpisodeInfo: {JsonSerializer.Serialize(info, options: Constants.JsonSerializerOptions)}");
+        logger.LogDebug("EpisodeInfo: {info}", JsonSerializer.Serialize(info, options: Constants.JsonSerializerOptions));
         var result = new MetadataResult<Episode> { ResultLanguage = Constants.Language };
 
-        var movie = await _api.FetchMovie(info, token);
+        var movie = await api.FetchMovie(info, token);
         if (string.IsNullOrEmpty(movie.Sid)) { return result; }
 
         var index = 0;
@@ -38,7 +29,7 @@ public class EpisodeProvider : IRemoteMetadataProvider<Episode, EpisodeInfo>, IH
         if (index == 0) { index = info.IndexNumber ?? 0; }
         if (index == 0 || index > movie.EpisodeCount) { return result; }
 
-        var subject = await _api.FetchMovieEpisode(movie.Sid, index, token);
+        var subject = await api.FetchMovieEpisode(movie.Sid, index, token);
         if (string.IsNullOrEmpty(subject.Name)) { return result; }
 
         result.Item = new Episode()
@@ -59,13 +50,13 @@ public class EpisodeProvider : IRemoteMetadataProvider<Episode, EpisodeInfo>, IH
 
     public Task<IEnumerable<RemoteSearchResult>> GetSearchResults(EpisodeInfo info, CancellationToken token)
     {
-        _log.LogDebug($"EpisodeInfo: {JsonSerializer.Serialize(info, options: Constants.JsonSerializerOptions)}");
+        logger.LogDebug("EpisodeInfo: {info}", JsonSerializer.Serialize(info, options: Constants.JsonSerializerOptions));
         throw new NotImplementedException();
     }
 
     public async Task<HttpResponseMessage> GetImageResponse(string url, CancellationToken token)
     {
-        _log.LogDebug($"Fetching image: {url}");
-        return await _api.GetHttpClient().GetAsync(url, token).ConfigureAwait(false);
+        logger.LogDebug("Fetching image: {url}", url);
+        return await api.GetHttpClient().GetAsync(url, token).ConfigureAwait(false);
     }
 }

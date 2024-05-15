@@ -6,17 +6,8 @@ using Microsoft.Extensions.Logging;
 
 namespace Jellyfin.Plugin.Douban.Provider;
 
-public class PersonImageProvider : IRemoteImageProvider, IHasOrder
+public class PersonImageProvider(DoubanApi api, ILogger<PersonImageProvider> logger) : IRemoteImageProvider, IHasOrder
 {
-    private readonly DoubanApi _api;
-    private readonly ILogger<PersonImageProvider> _log;
-
-    public PersonImageProvider(DoubanApi api, ILogger<PersonImageProvider> logger)
-    {
-        _api = api;
-        _log = logger;
-    }
-
     public int Order => 0;
     public string Name => Constants.ProviderName;
 
@@ -27,7 +18,7 @@ public class PersonImageProvider : IRemoteImageProvider, IHasOrder
 
     public IEnumerable<ImageType> GetSupportedImages(BaseItem item)
     {
-        return new[] { ImageType.Primary };
+        return [ImageType.Primary];
     }
 
     public async Task<IEnumerable<RemoteImageInfo>> GetImages(BaseItem item, CancellationToken token)
@@ -40,7 +31,7 @@ public class PersonImageProvider : IRemoteImageProvider, IHasOrder
             return images;
         }
 
-        var subject = await _api.FetchPerson(id.ToString(), token);
+        var subject = await api.FetchPerson(id.ToString(), token);
 
         if (subject != null && !string.IsNullOrEmpty(subject.PosterUrl))
         {
@@ -60,7 +51,7 @@ public class PersonImageProvider : IRemoteImageProvider, IHasOrder
 
     public async Task<HttpResponseMessage> GetImageResponse(string url, CancellationToken token)
     {
-        _log.LogDebug($"Fetching image: {url}");
-        return await _api.GetHttpClient().GetAsync(url, token).ConfigureAwait(false);
+        logger.LogDebug("Fetching image: {url}", url);
+        return await api.GetHttpClient().GetAsync(url, token).ConfigureAwait(false);
     }
 }

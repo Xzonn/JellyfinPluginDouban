@@ -23,8 +23,8 @@ public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
 
     public override Guid Id => Guid.Parse(Constants.PluginGuid);
 
-    public IEnumerable<PluginPageInfo> GetPages() => new[]
-    {
+    public IEnumerable<PluginPageInfo> GetPages() =>
+    [
         new PluginPageInfo
         {
             Name = "Plugin.Douban.Configuration",
@@ -33,5 +33,5 @@ public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
             EnableInMainMenu = true,
             EmbeddedResourcePath = $"{GetType().Namespace}.Configuration.ConfigPage.html",
         },
-    };
+    ];
 }

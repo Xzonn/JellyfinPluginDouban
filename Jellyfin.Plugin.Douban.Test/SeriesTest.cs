@@ -2,6 +2,7 @@
 using MediaBrowser.Controller.Providers;
 using Microsoft.Extensions.DependencyInjection;
 using System.IO;
+using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -18,15 +19,15 @@ namespace Jellyfin.Plugin.Douban.Test
         }
 
         [Fact]
-        public void TestGetMetadata()
+        public async Task TestGetMetadata()
         {
-            var result = _provider.GetMetadata(new SeriesInfo
+            var result = await _provider.GetMetadata(new SeriesInfo
             {
                 Name = "民王",
                 Path = Path.Combine(Path.GetTempPath(), "民王 (2015)"),
                 Year = 2015,
                 IsAutomated = true,
-            }, new System.Threading.CancellationToken()).Result;
+            }, new System.Threading.CancellationToken());
             Assert.True(result.HasMetadata);
         }
     }
