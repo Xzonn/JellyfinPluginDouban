@@ -20,13 +20,15 @@ for version in versions:
   if version["version"] == f"{new_version}.0":
     raise ValueError("version is existed")
 
+major, minor, patch = new_version.split(".")
+
 with open(f"dist/Jellyfin.Plugin.Douban.{new_version}.0.zip", "rb") as reader:
   md5sum = md5(reader.read()).hexdigest()
 
 versions.append({
   "checksum": md5sum.upper(),
   "changelog": f"See: https://github.com/Xzonn/JellyfinPluginDouban/tree/v{new_version}",
-  "targetAbi": "10.8.0.0",
+  "targetAbi": f"10.{int(major) + 7}.0.0",
   "sourceUrl": f"https://xzonn.top/JellyfinPluginDouban/dist/Jellyfin.Plugin.Douban.{new_version}.0.zip",
   "timestamp": datetime.datetime.now(tz=datetime.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
   "version": f"{new_version}.0",
