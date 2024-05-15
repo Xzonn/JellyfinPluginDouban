@@ -368,7 +368,7 @@ public partial class DoubanApi
             {
                 posterUrl = REGEX_DOUBANIO_HOST.Replace(posterUrl, Configuration.CdnServer);
             }
-            var roleText = Array.Empty<string>();
+            string[] roleText = [""];
             if (_.QuerySelector(".role") is HtmlNode __) { roleText = __.InnerText.Trim().Split(" "); }
             var type = roleText[0];
             var role = "";
