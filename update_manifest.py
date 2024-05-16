@@ -27,7 +27,7 @@ with open(f"dist/Jellyfin.Plugin.Douban.{new_version}.0.zip", "rb") as reader:
 
 versions.append({
   "checksum": md5sum.upper(),
-  "changelog": f"See: https://github.com/Xzonn/JellyfinPluginDouban/tree/v{new_version}",
+  "changelog": f"https://xzonn.top/posts/Jellyfin-Plugin-Douban.html#%E6%9B%B4%E6%96%B0%E6%97%A5%E5%BF%97",
   "targetAbi": f"10.{int(major) + 7}.0.0",
   "sourceUrl": f"https://xzonn.top/JellyfinPluginDouban/dist/Jellyfin.Plugin.Douban.{new_version}.0.zip",
   "timestamp": datetime.datetime.now(tz=datetime.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
