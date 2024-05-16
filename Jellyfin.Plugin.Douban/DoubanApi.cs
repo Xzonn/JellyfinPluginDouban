@@ -27,8 +27,8 @@ public partial class DoubanApi
     private static Regex REGEX_IMAGE => new(@"/(p\d+)\.(?:webp|png|jpg|jpeg|gif)$");
     private static Regex REGEX_IMAGE_URL => new(@"url\((.+?\.(?:webp|png|jpg|jpeg|gif))\)");
     private static Regex REGEX_ORIGINAL_NAME => new(@"^原名:");
-    private static Regex REGEX_AUTOMATIC_SEASON_NAME => new(@"^\s*(?:第 *\d+ *季|Season \d+|未知季|Season Unknown|Specials)\s*$");
-    private static Regex REGEX_SEASON => new(@"第([一二三四五六七八九十百千万\d]+)[季期]");
+    private static Regex REGEX_AUTOMATIC_SEASON_NAME => new(@"^ *(?:第 *\d+ *季|Season \d+|未知季|Season Unknown|Specials) *$");
+    private static Regex REGEX_SEASON => new(@" *第([一二三四五六七八九十百千万\d]+)[季期]");
     private static Regex REGEX_DOUBAN_POSTFIX => new(@" \(豆瓣\)$");
     private static Regex REGEX_BRACKET => new(@"\(.+?\)?$");
     private static Regex REGEX_DATE => new(@"\d{4}-\d\d-\d\d");
@@ -192,10 +192,10 @@ public partial class DoubanApi
                     var subject = await FetchMovie(parentId.ToString(), token);
                     if (subject != null)
                     {
-                        searchNames.Add($"{subject.Name} 第{info.IndexNumber}季");
+                        searchNames.Add($"{REGEX_SEASON.Replace(subject.Name!, "")} 第{info.IndexNumber}季");
                     }
                 }
-                if (!string.IsNullOrWhiteSpace(infoName)) { searchNames.Add($"{infoName} 第{info.IndexNumber}季"); }
+                if (!string.IsNullOrWhiteSpace(infoName)) { searchNames.Add($"{REGEX_SEASON.Replace(infoName, "")} 第{info.IndexNumber}季"); }
             }
 
             if (searchNames.Count == 0)
