@@ -261,9 +261,17 @@ public partial class DoubanApi
         int subjectId;
         if (info is EpisodeInfo episodeInfo)
         {
-            if (!int.TryParse(episodeInfo.SeriesProviderIds.GetValueOrDefault(Constants.ProviderId), out subjectId))
+            if (!int.TryParse(episodeInfo.SeasonProviderIds.GetValueOrDefault(Constants.ProviderId), out subjectId))
             {
-                int.TryParse(episodeInfo.SeriesProviderIds.GetValueOrDefault(Constants.OddbId), out subjectId);
+                int.TryParse(episodeInfo.SeasonProviderIds.GetValueOrDefault(Constants.OddbId), out subjectId);
+            }
+
+            if (subjectId == 0)
+            {
+                if (!int.TryParse(episodeInfo.SeriesProviderIds.GetValueOrDefault(Constants.ProviderId), out subjectId))
+                {
+                    int.TryParse(episodeInfo.SeriesProviderIds.GetValueOrDefault(Constants.OddbId), out subjectId);
+                }
             }
 
             if (subjectId == 0)
