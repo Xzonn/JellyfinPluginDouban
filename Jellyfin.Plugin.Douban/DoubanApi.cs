@@ -1,5 +1,6 @@
 ﻿using Emby.Naming.Video;
 using HtmlAgilityPack;
+using Jellyfin.Data.Enums;
 using Jellyfin.Plugin.Douban.Configuration;
 using Jellyfin.Plugin.Douban.Model;
 using MediaBrowser.Controller.Entities;
@@ -418,21 +419,21 @@ public partial class DoubanApi
                 ImageUrl = posterUrl,
                 Type = type switch
                 {
-                    "导演" => PersonType.Director,
-                    "演员" => PersonType.Actor,
-                    "配音" => PersonType.Actor,
-                    "编剧" => PersonType.Writer,
-                    "制片人" => PersonType.Producer,
-                    "制作人" => PersonType.Producer,
-                    "作曲" => PersonType.Composer,
-                    "音乐" => PersonType.Composer,
-                    _ => "",
+                    "导演" => PersonKind.Director,
+                    "演员" => PersonKind.Actor,
+                    "配音" => PersonKind.Actor,
+                    "编剧" => PersonKind.Writer,
+                    "制片人" => PersonKind.Producer,
+                    "制作人" => PersonKind.Producer,
+                    "作曲" => PersonKind.Composer,
+                    "音乐" => PersonKind.Composer,
+                    _ => PersonKind.Unknown,
                 },
                 Role = role,
             };
             result.SetProviderId(Constants.ProviderId, cid);
             return result;
-        }).Where(_ => !string.IsNullOrEmpty(_.Type)).ToList();
+        }).Where(_ => _.Type != PersonKind.Unknown).ToList();
         return results;
     }
 
