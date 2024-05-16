@@ -598,7 +598,10 @@ public partial class DoubanApi
             await Task.Delay(LastSearch - DateTime.Now, token).ConfigureAwait(false);
         }
         var message = new HttpRequestMessage(HttpMethod.Get, url);
-        message.Headers.Add("Cookie", Configuration.DoubanCookie);
+        if (!string.IsNullOrEmpty(Configuration.DoubanCookie))
+        {
+            message.Headers.Add("Cookie", Configuration.DoubanCookie);
+        }
         var response = await _httpClient.SendAsync(message, token).ConfigureAwait(false);
         LastSearch = DateTime.Now;
         if (!response.IsSuccessStatusCode)
