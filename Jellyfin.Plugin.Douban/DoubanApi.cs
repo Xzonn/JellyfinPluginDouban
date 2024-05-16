@@ -27,7 +27,7 @@ public partial class DoubanApi
     private static Regex REGEX_IMAGE => new(@"/(p\d+)\.(?:webp|png|jpg|jpeg|gif)$");
     private static Regex REGEX_IMAGE_URL => new(@"url\((.+?\.(?:webp|png|jpg|jpeg|gif))\)");
     private static Regex REGEX_ORIGINAL_NAME => new(@"^原名:");
-    private static Regex REGEX_AUTOMATIC_SEASON_NAME => new(@"^(?:第 \d+ 季|Season \d+|未知季|Season Unknown|Specials)$");
+    private static Regex REGEX_AUTOMATIC_SEASON_NAME => new(@"^\s*(?:第 *\d+ *季|Season \d+|未知季|Season Unknown|Specials)\s*$");
     private static Regex REGEX_SEASON => new(@"第([一二三四五六七八九十百千万\d]+)[季期]");
     private static Regex REGEX_DOUBAN_POSTFIX => new(@" \(豆瓣\)$");
     private static Regex REGEX_BRACKET => new(@"\(.+?\)?$");
@@ -64,12 +64,12 @@ public partial class DoubanApi
         Caches = [];
     }
 
-    public async Task<List<ApiMovieSubject>> SearchMovie(string keyword, CancellationToken token = default)
+    public async Task<List<ApiMovieSubject>> SearchMovie(string keyword, bool isMovie = true, bool isFirstSeason = false, CancellationToken token = default)
     {
         keyword = keyword.Trim();
         if (string.IsNullOrEmpty(keyword)) { return []; }
 
-        _log.LogDebug("Searching movie: {keyword}", keyword);
+        _log.LogDebug("Searching movie: {keyword} (isMovie: {isMovie}, isFirstSeason: {isFirstSeason})", keyword, isMovie, isFirstSeason);
         string url = $"https://www.douban.com/search?cat=1002&q={Uri.EscapeDataString(keyword)}";
         string? responseText = await FetchUrl(url, token);
         if (string.IsNullOrEmpty(responseText)) { return []; }
@@ -113,6 +113,12 @@ public partial class DoubanApi
                 Year = year,
             };
         }).ToList();
+        results = [.. results.OrderBy(_ => _.Type == (isMovie ? "电影" : "电视剧") ? 0 : 1)];
+        if (!isMovie && isFirstSeason)
+        {
+            var first = results[0].Name!;
+            results = [.. results.OrderBy(_ => _.Name != first && first.StartsWith(_.Name!) ? 0 : 1)];
+        }
         _log.LogDebug("{count} result(s) found for: {keyword}, first: {first}", results.Count, keyword, results[0].Name);
         return results;
     }
@@ -136,9 +142,14 @@ public partial class DoubanApi
         }
 
         var infoName = (string.IsNullOrEmpty(info.Name) || REGEX_AUTOMATIC_SEASON_NAME.IsMatch(info.Name)) ? "" : info.Name;
-        var searchNames = new List<string?>();
+        var isMovie = info is MovieInfo;
+        // For series, if the name does not include a season name, search for the first season
+        // For seasons, if the index < 2, search for the first season
+        var isFirstSeason = (info is SeriesInfo && !REGEX_SEASON.IsMatch(infoName)) || (info is SeasonInfo && info.IndexNumber < 2);
         if (searchResults.Count == 0)
         {
+            var searchNames = new List<string?>();
+
             if (info is EpisodeInfo episodeInfo)
             {
                 searchNames.Add(episodeInfo.SeriesProviderIds.GetValueOrDefault(MetadataProvider.Imdb.ToString()));
@@ -149,7 +160,7 @@ public partial class DoubanApi
             else
             {
                 searchNames.Add(info.GetProviderId(MetadataProvider.Imdb));
-                if (info is SeasonInfo seasonInfo)
+                if (info is SeasonInfo seasonInfo && info.IndexNumber < 2)
                 {
                     searchNames.Add(seasonInfo.SeriesProviderIds.GetValueOrDefault(MetadataProvider.Imdb.ToString()));
                 }
@@ -164,47 +175,68 @@ public partial class DoubanApi
                 searchNames.Add(info.OriginalTitle);
                 searchNames.Add(Path.GetFileName(info.Path));
             }
-        }
-        _log.LogDebug("Info type: {type}, names for searching: {names}", info.GetType(), string.Join(", ", searchNames));
 
-        foreach (var name in searchNames)
-        {
-            if (
-                string.IsNullOrWhiteSpace(name) ||
+            searchNames = searchNames.Where(name =>
+            {
+                if (string.IsNullOrWhiteSpace(name)) return false;
                 // Season name is auto-generated, no need to search
-                ((info is SeasonInfo || info is EpisodeInfo) && REGEX_AUTOMATIC_SEASON_NAME.IsMatch(name))
-                )
+                if ((info is SeasonInfo || info is EpisodeInfo) && REGEX_AUTOMATIC_SEASON_NAME.IsMatch(name)) return false;
+                return true;
+            }).ToList();
+
+            if (info is SeasonInfo && info.IndexNumber > 1)
             {
-                continue;
+                int parentId = TryParseDoubanId(info, true);
+                if (parentId != 0)
+                {
+                    var subject = await FetchMovie(parentId.ToString(), token);
+                    if (subject != null)
+                    {
+                        searchNames.Add($"{subject.Name} 第{info.IndexNumber}季");
+                    }
+                }
+                if (!string.IsNullOrWhiteSpace(infoName)) { searchNames.Add($"{infoName} 第{info.IndexNumber}季"); }
             }
 
-            searchResults = await SearchMovie(name.Replace(".", " "), token);
-            if (searchResults.Count != 0) { break; }
-
-            VideoResolver.TryCleanString(infoName, new Emby.Naming.Common.NamingOptions(), out var newName);
-            if (!string.IsNullOrEmpty(newName))
+            if (searchNames.Count == 0)
             {
-                searchResults = await SearchMovie(newName.Replace(".", " "), token);
-                if (searchResults.Count != 0) { break; }
+                _log.LogDebug("Info type: {type}, cannot determine names for searching", info.GetType());
+            }
+            else
+            {
+                _log.LogDebug("Info type: {type}, names for searching: {names}", info.GetType(), string.Join(", ", searchNames));
             }
 
-            newName = AnitomySharp.AnitomySharp.Parse(infoName).FirstOrDefault(_ => _.Category == AnitomySharp.Element.ElementCategory.ElementAnimeTitle)?.Value;
-            if (!string.IsNullOrEmpty(newName))
+            foreach (var name in searchNames)
             {
-                searchResults = await SearchMovie(newName.Replace(".", " "), token);
+                searchResults = await SearchMovie(name!.Replace(".", " ").Trim(), isMovie, isFirstSeason, token);
                 if (searchResults.Count != 0) { break; }
+
+                VideoResolver.TryCleanString(infoName, new Emby.Naming.Common.NamingOptions(), out var newName);
+                if (!string.IsNullOrEmpty(newName))
+                {
+                    searchResults = await SearchMovie(newName.Replace(".", " "), isMovie, isFirstSeason, token);
+                    if (searchResults.Count != 0) { break; }
+                }
+
+                newName = AnitomySharp.AnitomySharp.Parse(infoName).FirstOrDefault(_ => _.Category == AnitomySharp.Element.ElementCategory.ElementAnimeTitle)?.Value;
+                if (!string.IsNullOrEmpty(newName))
+                {
+                    searchResults = await SearchMovie(newName.Replace(".", " "), isMovie, isFirstSeason, token);
+                    if (searchResults.Count != 0) { break; }
+                }
             }
         }
 
-        if (searchResults.Count > 0 && ((info is SeriesInfo && !REGEX_SEASON.IsMatch(infoName)) || (info is SeasonInfo seasonInfo2 && seasonInfo2.IndexNumber == 1)))
+        if (searchResults.Count > 0 && isFirstSeason)
         {
+            // If the name of search result contains "第x季" but x != 1, search for the first season again
             var season = REGEX_SEASON.Match(searchResults[0].Name!);
             if (season.Success && !ONES.Contains(season.Groups[1].Value))
             {
-                searchResults = await SearchMovie(REGEX_SEASON.Replace(searchResults[0].Name!, "第一季"), token);
+                searchResults = await SearchMovie(REGEX_SEASON.Replace(searchResults[0].Name!, "第1季"), isMovie, isFirstSeason, token);
             }
         }
-        searchResults = [.. searchResults.OrderBy(_ => _.Type == (info is MovieInfo ? "电影" : "电视剧") ? 0 : 1)];
         var results = searchResults.Select(_ =>
         {
             var result = new RemoteSearchResult
@@ -223,7 +255,7 @@ public partial class DoubanApi
         return results;
     }
 
-    public static int TryParseDoubanId(ItemLookupInfo info)
+    public static int TryParseDoubanId(ItemLookupInfo info, bool ignoreSeasonIndex = false)
     {
         int subjectId;
         if (info is EpisodeInfo episodeInfo)
@@ -249,7 +281,7 @@ public partial class DoubanApi
                 int.TryParse(info.ProviderIds.GetValueOrDefault(Constants.OddbId), out subjectId);
             }
 
-            if (subjectId == 0 && info is SeasonInfo seasonInfo && (seasonInfo.IndexNumber == 0 || seasonInfo.IndexNumber == 1))
+            if (subjectId == 0 && info is SeasonInfo seasonInfo && (seasonInfo.IndexNumber < 2 || ignoreSeasonIndex))
             {
                 if (!int.TryParse(seasonInfo.SeriesProviderIds.GetValueOrDefault(Constants.ProviderId), out subjectId))
                 {

@@ -20,17 +20,17 @@ namespace Jellyfin.Plugin.Douban.Test
         [Fact]
         public async Task TestSearchMovie()
         {
-            var list = await _doubanApi.SearchMovie("我是大哥大");
+            var list = await _doubanApi.SearchMovie("我是大哥大", false, false);
             Assert.NotEmpty(list);
             Assert.Equal("我是大哥大", list[0].Name ?? "");
 
-            list = await _doubanApi.SearchMovie("tt8207660");
+            list = await _doubanApi.SearchMovie("tt8207660", false, false);
             Assert.NotEmpty(list);
             Assert.Equal("我是大哥大", list[0].Name ?? "");
 
-            list = await _doubanApi.SearchMovie("星灵感应 (2023)");
+            list = await _doubanApi.SearchMovie("鬼灭之刃", false, true);
             Assert.NotEmpty(list);
-            Assert.Equal("星灵感应", list[0].Name ?? "");
+            Assert.Equal("鬼灭之刃", list[0].Name ?? "");
         }
 
         [Fact]

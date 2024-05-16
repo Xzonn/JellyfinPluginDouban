@@ -1,6 +1,6 @@
 ﻿namespace Jellyfin.Plugin.Douban.Model;
 
-struct ResultItem
+internal struct ResultItem
 {
 #pragma warning disable IDE1006 // 命名样式
     public string img { get; set; }
