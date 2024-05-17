@@ -153,7 +153,7 @@ public partial class DoubanApi
         var isMovie = info is MovieInfo;
         // For series, if the name does not include a season name, search for the first season
         // For seasons, if the index < 2, search for the first season
-        var isFirstSeason = (info is SeriesInfo && !REGEX_SEASON.IsMatch(infoName)) || (info is SeasonInfo && info.IndexNumber < 2);
+        var isFirstSeason = (info is SeriesInfo && !REGEX_SEASON.IsMatch(infoName)) || (info is SeasonInfo && (info.IndexNumber ?? 0) < 2);
         if (searchResults.Count == 0)
         {
             var searchNames = new List<string?>();
@@ -168,7 +168,7 @@ public partial class DoubanApi
             else
             {
                 searchNames.Add(info.GetProviderId(MetadataProvider.Imdb));
-                if (info is SeasonInfo seasonInfo && info.IndexNumber < 2)
+                if (info is SeasonInfo seasonInfo && (info.IndexNumber ?? 0) < 2)
                 {
                     searchNames.Add(seasonInfo.SeriesProviderIds.GetValueOrDefault(MetadataProvider.Imdb.ToString()));
                 }
@@ -182,6 +182,7 @@ public partial class DoubanApi
                 }
                 searchNames.Add(info.OriginalTitle);
                 searchNames.Add(Path.GetFileName(info.Path));
+                searchNames.Add(AnitomySharp.AnitomySharp.Parse(Path.GetFileName(info.Path)).FirstOrDefault(_ => _.Category == AnitomySharp.Element.ElementCategory.ElementAnimeTitle)?.Value);
             }
 
             searchNames = searchNames.Where(name =>
@@ -283,7 +284,7 @@ public partial class DoubanApi
         {
             int.TryParse(info.GetProviderId(Constants.ProviderId), out subjectId);
 
-            if (subjectId == 0 && info is SeasonInfo seasonInfo && (seasonInfo.IndexNumber < 2 || ignoreSeasonIndex))
+            if (subjectId == 0 && info is SeasonInfo seasonInfo && ((seasonInfo.IndexNumber ?? 0) < 2 || ignoreSeasonIndex))
             {
                 int.TryParse(seasonInfo.SeriesProviderIds.GetValueOrDefault(Constants.ProviderId), out subjectId);
             }
@@ -306,7 +307,7 @@ public partial class DoubanApi
         var posterId = REGEX_IMAGE.Match(content.QuerySelector("#mainpic img").Attributes["src"].Value).Groups[1].Value;
         var originalName = content.QuerySelector("h1 span").InnerText.Replace(name, "").Trim();
         var year = Convert.ToInt32(content.QuerySelector("h1 .year").InnerText.Trim().TrimStart('(').TrimEnd(')'));
-        var rating = content.QuerySelector("#interest_sectl .rating_num").InnerText.Trim();
+        var rating = content.QuerySelector("#interest_sectl .rating_num")?.InnerText.Trim();
         rating = string.IsNullOrEmpty(rating) ? "0.0" : rating;
         var info = content.QuerySelector("#info").InnerText.Trim().Split("\n").Select(_ => _.Trim().Split(": ")).Where(_ => _.Length > 1).ToDictionary(_ => _[0], _ => string.Join(": ", _[1..]).Trim());
         var type = "电影";
