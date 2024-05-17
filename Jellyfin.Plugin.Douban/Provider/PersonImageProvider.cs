@@ -26,12 +26,17 @@ public class PersonImageProvider(DoubanApi api, ILogger<PersonImageProvider> log
         token.ThrowIfCancellationRequested();
         var images = new List<RemoteImageInfo>();
 
-        if (!int.TryParse(item.GetProviderId(Constants.ProviderId), out var id) && !int.TryParse(item.GetProviderId(Constants.OddbId), out id))
+        if (!int.TryParse(item.GetProviderId(Constants.PersonageId), out var pid))
         {
-            return images;
+            // Fetch person by celebrity id
+            if (int.TryParse(item.GetProviderId(Constants.ProviderId), out var cid))
+            {
+                int.TryParse(await api.ConvertCelebrityIdToPersonageId(cid.ToString(), token), out pid);
+            }
         }
+        if (pid == 0) { return images; }
 
-        var subject = await api.FetchPerson(id.ToString(), token);
+        var subject = await api.FetchPersonByPersonageId(pid.ToString(), token);
 
         if (subject != null && !string.IsNullOrEmpty(subject.PosterUrl))
         {

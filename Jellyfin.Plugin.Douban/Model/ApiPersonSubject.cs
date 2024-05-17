@@ -5,7 +5,8 @@ public class ApiPersonSubject
     public string? Name { get; set; }
     public string? OriginalName { get; set; }
     public string? PosterUrl { get; set; }
-    public string? Cid { get; set; }
+    public string? CelebrityId { get; set; }
+    public string? PersonageId { get; set; }
     public string? Gender { get; set; }
     public DateTime? Birthdate { get; set; }
     public DateTime? Deathdate { get; set; }

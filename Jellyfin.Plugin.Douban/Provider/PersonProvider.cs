@@ -18,27 +18,29 @@ public class PersonProvider(DoubanApi api, ILogger<PersonProvider> logger) : IRe
         token.ThrowIfCancellationRequested();
         logger.LogDebug("PersonLookupInfo: {info}", JsonSerializer.Serialize(info, options: Constants.JsonSerializerOptions));
         var result = new MetadataResult<Person> { ResultLanguage = Constants.Language };
-        if (!int.TryParse(info.ProviderIds.GetValueOrDefault(Constants.ProviderId), out var personId))
-        {
-            int.TryParse(info.ProviderIds.GetValueOrDefault(Constants.OddbId), out personId);
-        }
 
-        if (personId == 0)
+        if (!int.TryParse(info.GetProviderId(Constants.PersonageId), out var pid))
+        {
+            // Fetch person by celebrity id
+            if (int.TryParse(info.GetProviderId(Constants.ProviderId), out var cid))
+            {
+                int.TryParse(await api.ConvertCelebrityIdToPersonageId(cid.ToString(), token), out pid);
+            }
+        }
+        if (pid == 0)
         {
             var searchResults = (await GetSearchResults(info, token)).ToList();
             if (searchResults.Count > 0)
             {
-                if (!int.TryParse(searchResults[0].GetProviderId(Constants.ProviderId), out personId))
-                {
-                    int.TryParse(searchResults[0].GetProviderId(Constants.OddbId), out personId);
-                }
+                int.TryParse(searchResults[0].GetProviderId(Constants.PersonageId), out pid);
             }
         }
 
-        if (personId == 0) { return result; }
+        if (pid == 0) { return result; }
 
-        var person = await api.FetchPerson(personId.ToString(), token);
-        if (string.IsNullOrEmpty(person.Cid)) { return result; }
+        var person = await api.FetchPersonByPersonageId(pid.ToString(), token);
+        if (person is null || string.IsNullOrEmpty(person.PersonageId)) { return result; }
+
         result.Item = new Person
         {
             Name = person.Name,
@@ -50,7 +52,7 @@ public class PersonProvider(DoubanApi api, ILogger<PersonProvider> logger) : IRe
             HomePageUrl = person.Website,
             ProductionLocations = person.Birthplace,
         };
-        result.Item.SetProviderId(Constants.ProviderId, person.Cid);
+        result.Item.SetProviderId(Constants.PersonageId, person.PersonageId);
         if (!string.IsNullOrEmpty(person.ImdbId)) { result.Item.SetProviderId(MetadataProvider.Imdb, person.ImdbId); }
         result.QueriedById = true;
         result.HasMetadata = true;
@@ -63,9 +65,18 @@ public class PersonProvider(DoubanApi api, ILogger<PersonProvider> logger) : IRe
         token.ThrowIfCancellationRequested();
         var searchResults = new List<ApiPersonSubject>();
 
-        if (int.TryParse(searchInfo.ProviderIds.GetValueOrDefault(Constants.ProviderId), out var id) || int.TryParse(searchInfo.ProviderIds.GetValueOrDefault(Constants.OddbId), out id))
+        if (!int.TryParse(searchInfo.GetProviderId(Constants.PersonageId), out var pid))
         {
-            var subject = await api.FetchPerson(id.ToString(), token);
+            // Fetch person by celebrity id
+            if (int.TryParse(searchInfo.GetProviderId(Constants.ProviderId), out var cid))
+            {
+                int.TryParse(await api.ConvertCelebrityIdToPersonageId(cid.ToString(), token), out pid);
+            }
+        }
+
+        if (pid != 0)
+        {
+            var subject = await api.FetchPersonByPersonageId(pid.ToString(), token);
             if (subject != null)
             {
                 searchResults.Add(subject);
@@ -87,7 +98,7 @@ public class PersonProvider(DoubanApi api, ILogger<PersonProvider> logger) : IRe
                 SearchProviderName = _.OriginalName,
                 ImageUrl = _.PosterUrl,
             };
-            result.SetProviderId(Constants.ProviderId, _.Cid);
+            result.SetProviderId(Constants.PersonageId, _.PersonageId);
             if (!string.IsNullOrEmpty(_.ImdbId)) { result.SetProviderId(MetadataProvider.Imdb, _.ImdbId); }
             return result;
         });

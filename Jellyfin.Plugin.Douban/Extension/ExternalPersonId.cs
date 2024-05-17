@@ -11,9 +11,9 @@ public class ExternalPersonId : IExternalId
 
     public string ProviderName => Constants.ProviderName;
 
-    public string Key => Constants.ProviderId;
+    public string Key => Constants.PersonageId;
 
     public ExternalIdMediaType? Type => ExternalIdMediaType.Person;
 
-    public string UrlFormatString => "https://movie.douban.com/celebrity/{0}/";
+    public string UrlFormatString => "https://www.douban.com/personage/{0}/";
 }
