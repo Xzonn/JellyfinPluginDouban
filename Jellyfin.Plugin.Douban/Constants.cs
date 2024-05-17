@@ -10,7 +10,7 @@ public class Constants
 
     public const string ProviderId = "Douban ID";
 
-    public const string OddbId = "OpenDoubanID";
+    public const string PersonageId = "Douban Personage ID";
 
     public const string PluginName = "Douban";
 

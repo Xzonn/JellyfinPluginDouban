@@ -34,6 +34,7 @@ public partial class DoubanApi
     private static Regex REGEX_DATE => new(@"\d{4}-\d\d-\d\d");
     private static Regex REGEX_CELEBRITY => new(@"/celebrity/(\d+)/");
     private static Regex REGEX_DOUBANIO_HOST => new(@"https?://img\d+\.doubanio.com");
+    private static Regex REGEX_PERSONAGE_ID => new(@"/personage/(\d+)");
 
     private readonly HttpClient _httpClient;
     public HttpClient GetHttpClient() => _httpClient;
@@ -119,7 +120,14 @@ public partial class DoubanApi
             var first = results[0].Name!;
             results = [.. results.OrderBy(_ => _.Name != first && first.StartsWith(_.Name!) ? 0 : 1)];
         }
-        _log.LogDebug("{count} result(s) found for: {keyword}, first: {first}", results.Count, keyword, results[0].Name);
+        if (results.Count == 0)
+        {
+            _log.LogDebug("No results found: {keyword}", keyword);
+        }
+        else
+        {
+            _log.LogDebug("{count} result(s) found for: {keyword}, first: {first}", results.Count, keyword, results[0].Name);
+        }
         return results;
     }
 
@@ -260,10 +268,7 @@ public partial class DoubanApi
         int subjectId;
         if (info is EpisodeInfo episodeInfo)
         {
-            if (!int.TryParse(episodeInfo.SeriesProviderIds.GetValueOrDefault(Constants.ProviderId), out subjectId))
-            {
-                int.TryParse(episodeInfo.SeriesProviderIds.GetValueOrDefault(Constants.OddbId), out subjectId);
-            }
+            int.TryParse(episodeInfo.SeriesProviderIds.GetValueOrDefault(Constants.ProviderId), out subjectId);
 
             if (subjectId == 0)
             {
@@ -276,17 +281,11 @@ public partial class DoubanApi
         }
         else
         {
-            if (!int.TryParse(info.ProviderIds.GetValueOrDefault(Constants.ProviderId), out subjectId))
-            {
-                int.TryParse(info.ProviderIds.GetValueOrDefault(Constants.OddbId), out subjectId);
-            }
+            int.TryParse(info.GetProviderId(Constants.ProviderId), out subjectId);
 
             if (subjectId == 0 && info is SeasonInfo seasonInfo && (seasonInfo.IndexNumber < 2 || ignoreSeasonIndex))
             {
-                if (!int.TryParse(seasonInfo.SeriesProviderIds.GetValueOrDefault(Constants.ProviderId), out subjectId))
-                {
-                    int.TryParse(seasonInfo.SeriesProviderIds.GetValueOrDefault(Constants.OddbId), out subjectId);
-                }
+                int.TryParse(seasonInfo.SeriesProviderIds.GetValueOrDefault(Constants.ProviderId), out subjectId);
             }
         }
         return subjectId;
@@ -500,30 +499,58 @@ public partial class DoubanApi
         if (string.IsNullOrEmpty(keyword)) { return []; }
 
         _log.LogDebug("Searching person: {keyword}", keyword);
-        string url = $"https://movie.douban.com/j/subject_suggest?q={Uri.EscapeDataString(keyword)}";
+        string url = $"https://www.douban.com/search?cat=1065&q={Uri.EscapeDataString(keyword)}";
         string? responseText = await FetchUrl(url, token);
         if (string.IsNullOrEmpty(responseText)) { return []; }
 
-        var results = JsonSerializer.Deserialize<List<ResultItem>>(responseText)!.Where(_ => _.type == "celebrity").Select(_ =>
+        var htmlDoc = new HtmlDocument();
+        htmlDoc.LoadHtml(responseText);
+
+        var resultList = htmlDoc.QuerySelector(".result-list");
+        if (resultList == null)
         {
-            var result = new ApiPersonSubject()
+            _log.LogDebug("No results found: {keyword}", keyword);
+            return [];
+        }
+        var results = resultList.ChildNodes.Where(_ => _.HasClass("result")).Select(_ =>
+        {
+            var link = _.QuerySelector(".content .title h3 a");
+            var sid = REGEX_SID.Match(link.Attributes["onclick"].Value).Groups[1].Value;
+            var name = link.InnerText.Trim();
+            var posterUrl = _.QuerySelector(".pic img").Attributes["src"].Value;
+            var type = _.QuerySelector(".content .title h3 span").InnerText.Trim().TrimStart('[').TrimEnd(']');
+            return new ApiPersonSubject()
             {
-                Cid = _.id,
-                Name = _.title,
-                PosterUrl = _.url,
-                OriginalName = _.sub_title,
+                PersonageId = sid,
+                Name = name,
+                PosterUrl = posterUrl,
             };
-            return result;
         }).ToList();
-        if (results.Count == 0) { _log.LogDebug("No results found: {keyword}", keyword); }
-        else { _log.LogDebug("{count} result(s) found for: {keyword}, first: {first}", results.Count, keyword, results[0].Name); }
+        if (results.Count == 0)
+        {
+            _log.LogDebug("No results found: {keyword}", keyword);
+        }
+        else
+        {
+            _log.LogDebug("{count} result(s) found for: {keyword}, first: {first}", results.Count, keyword, results[0].Name);
+        }
         return results;
     }
 
-    public async Task<ApiPersonSubject> FetchPerson(string cid, CancellationToken token = default)
+    public async Task<string> ConvertCelebrityIdToPersonageId(string cid, CancellationToken token = default)
     {
-        _log.LogDebug("Fetching celebrity: {cid}", cid);
-        string url = $"https://movie.douban.com/celebrity/{cid}/";
+        var head = await _httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Head, $"https://movie.douban.com/celebrity/{cid}/"), token);
+        var pid = REGEX_PERSONAGE_ID.Match(head.RequestMessage?.RequestUri?.ToString() ?? "").Groups[1].Value;
+        return pid;
+    }
+
+    public async Task<ApiPersonSubject> FetchPersonByCelebrityId(string cid, CancellationToken token = default)
+        => await FetchPersonByPersonageId(await ConvertCelebrityIdToPersonageId(cid, token), token);
+
+    public async Task<ApiPersonSubject> FetchPersonByPersonageId(string pid, CancellationToken token = default)
+    {
+        _log.LogDebug("Fetching celebrity: {pid}", pid);
+        string url = $"https://www.douban.com/personage/{pid}/";
         string? responseText = await FetchUrl(url, token);
         if (string.IsNullOrEmpty(responseText)) { return new ApiPersonSubject(); }
         var htmlDoc = new HtmlDocument();
@@ -531,8 +558,9 @@ public partial class DoubanApi
 
         var content = htmlDoc.QuerySelector("#content");
         var image = content.QuerySelector("#headline .pic img");
+        image ??= content.QuerySelector(".subject-target img.avatar");
         var name = image.Attributes["alt"].Value;
-        _log.LogDebug("Cid {cid} is: {name}", cid, name);
+        _log.LogDebug("PersonageId {pid} is: {name}", pid, name);
         var posterUrl = image.Attributes["src"].Value;
         if (posterUrl.Contains("celebrity-default"))
         {
@@ -543,10 +571,15 @@ public partial class DoubanApi
             posterUrl = REGEX_DOUBANIO_HOST.Replace(posterUrl, Configuration.CdnServer);
         }
         var originalName = content.QuerySelector("h1").InnerText.Replace(name, "").Trim();
-        var info = content.QuerySelectorAll(".info ul li").Select(_ => _.InnerText.Trim().Split(": ")).Where(_ => _.Length > 1).ToDictionary(_ => _[0], _ => string.Join(": ", _[1..]).Trim());
-        var intro = string.Join("\n", (content.QuerySelector("#intro .bd .all") ?? content.QuerySelector("#intro .bd"))?.InnerText.Trim().Split("\n").Select(_ => _.Trim()) ?? []);
+        var infoList = content.QuerySelector(".info ul");
+        infoList ??= content.QuerySelector(".subject-target ul.subject-property");
+        var info = infoList.QuerySelectorAll("li").Select(_ => _.InnerText.Trim().Split(":", 2)).Where(_ => _.Length > 1).ToDictionary(_ => _[0], _ => _[1].Trim());
+        var introElement = content.QuerySelector("#intro .bd .all");
+        introElement ??= content.QuerySelector("#intro .bd");
+        introElement ??= content.QuerySelector(".desc .content .content");
+        var intro = string.Join("\n", introElement?.InnerText.Trim().Split("\n").Select(_ => _.Trim()) ?? []);
         var birthdate = info!.GetValueOrDefault("出生日期", null);
-        var deathdate = "";
+        var deathdate = info!.GetValueOrDefault("去世日期", null);
         if (info.TryGetValue("生卒日期", out string? birthAndDeath))
         {
             birthdate = birthAndDeath.Split("至")[0].Trim();
@@ -555,7 +588,7 @@ public partial class DoubanApi
         var bitrhplace = info!.GetValueOrDefault("出生地", null);
         var result = new ApiPersonSubject()
         {
-            Cid = cid,
+            PersonageId = pid,
             Name = name,
             PosterUrl = posterUrl,
             OriginalName = string.IsNullOrEmpty(originalName) ? name : originalName,
@@ -565,7 +598,7 @@ public partial class DoubanApi
             Deathdate = string.IsNullOrEmpty(deathdate) ? null : Convert.ToDateTime(deathdate),
             Birthplace = string.IsNullOrEmpty(bitrhplace) ? null : [bitrhplace],
             Website = info!.GetValueOrDefault("官方网站", null),
-            ImdbId = info!.GetValueOrDefault("imdb编号", null),
+            ImdbId = info!.GetValueOrDefault("imdb编号", info!.GetValueOrDefault("IMDb编号", null)),
         };
         return result;
     }

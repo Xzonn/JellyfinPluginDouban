@@ -91,6 +91,16 @@ namespace Jellyfin.Plugin.Douban.Test
         }
 
         [Fact]
+        public async Task TestFetchPerson()
+        {
+            var person = await _doubanApi.FetchPersonByCelebrityId("1321489");
+            Assert.Equal("×ô²Öç±Òô", person.Name ?? "");
+
+            person = await _doubanApi.FetchPersonByPersonageId("27555771");
+            Assert.Equal("×ô²Öç±Òô", person.Name ?? "");
+        }
+
+        [Fact]
         public async Task TestFetchMovieImages()
         {
             var list = await _doubanApi.FetchMovieImages("33400537", "R");

@@ -38,7 +38,7 @@ public class MovieImageProvider(DoubanApi api, ILogger<MovieImageProvider> logge
         token.ThrowIfCancellationRequested();
         var images = new List<RemoteImageInfo>();
 
-        if (!int.TryParse(item.GetProviderId(Constants.ProviderId), out var id) && !int.TryParse(item.GetProviderId(Constants.OddbId), out id))
+        if (!int.TryParse(item.GetProviderId(Constants.ProviderId), out var id))
         {
             return images;
         }
