@@ -16,7 +16,7 @@ public class PersonProvider(DoubanApi api, ILogger<PersonProvider> logger) : IRe
     public async Task<MetadataResult<Person>> GetMetadata(PersonLookupInfo info, CancellationToken token)
     {
         token.ThrowIfCancellationRequested();
-        logger.LogDebug("PersonLookupInfo: {info}", JsonSerializer.Serialize(info, options: Constants.JsonSerializerOptions));
+        logger.LogDebug("PersonLookupInfo: {info:l}", JsonSerializer.Serialize(info, options: Constants.JsonSerializerOptions));
         var result = new MetadataResult<Person> { ResultLanguage = Constants.Language };
 
         if (!int.TryParse(info.GetProviderId(Constants.PersonageId), out var pid))

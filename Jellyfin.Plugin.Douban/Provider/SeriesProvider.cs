@@ -15,7 +15,7 @@ public class SeriesProvider(DoubanApi api, ILogger<SeriesProvider> logger) : IRe
     public async Task<MetadataResult<Series>> GetMetadata(SeriesInfo info, CancellationToken token)
     {
         token.ThrowIfCancellationRequested();
-        logger.LogDebug("SeriesInfo: {info}", JsonSerializer.Serialize(info, options: Constants.JsonSerializerOptions));
+        logger.LogDebug("SeriesInfo: {info:l}", JsonSerializer.Serialize(info, options: Constants.JsonSerializerOptions));
         var result = new MetadataResult<Series> { ResultLanguage = Constants.Language };
 
         var subject = await api.FetchMovie(info, token);
@@ -52,7 +52,7 @@ public class SeriesProvider(DoubanApi api, ILogger<SeriesProvider> logger) : IRe
 
     public async Task<IEnumerable<RemoteSearchResult>> GetSearchResults(SeriesInfo info, CancellationToken token)
     {
-        logger.LogDebug("SeriesInfo: {info}", JsonSerializer.Serialize(info, options: Constants.JsonSerializerOptions));
+        logger.LogDebug("SeriesInfo: {info:l}", JsonSerializer.Serialize(info, options: Constants.JsonSerializerOptions));
         return await api.GetMovieSearchResults(info, true, token);
     }
 
