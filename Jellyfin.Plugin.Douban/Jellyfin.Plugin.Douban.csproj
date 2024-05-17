@@ -21,10 +21,6 @@
 
   <ItemGroup>
     <PackageReference Include="AnitomySharp.NET6" Version="0.5.1" />
-    <PackageReference Include="Costura.Fody" Version="5.7.0">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
     <PackageReference Include="HtmlAgilityPack" Version="1.11.61" />
     <PackageReference Include="HtmlAgilityPack.CssSelectors" Version="1.0.2" />
     <PackageReference Include="Jellyfin.Controller" Version="10.8.13" />

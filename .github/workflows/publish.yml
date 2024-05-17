@@ -27,10 +27,10 @@ jobs:
         run: |
           Move-Item -Path "Jellyfin.Plugin.Douban/Jellyfin.Plugin.Douban.csproj" -Destination "Jellyfin.Plugin.Douban/Jellyfin.Plugin.Douban.csproj.bak"
           Get-Content -Path "Jellyfin.Plugin.Douban/Jellyfin.Plugin.Douban.csproj.bak" -Encoding UTF8 | ForEach-Object { $_ -Replace '<((?:Assembly|File)?Version)>[\d\.]+</\1>', "<`$1>$env:XZ_VERSION</`$1>" } | Out-File -FilePath "Jellyfin.Plugin.Douban/Jellyfin.Plugin.Douban.csproj" -Encoding UTF8
-          dotnet build "Jellyfin.Plugin.Douban/Jellyfin.Plugin.Douban.csproj" -c "Release" -o "./publisher"
+          dotnet publish "Jellyfin.Plugin.Douban/Jellyfin.Plugin.Douban.csproj" -c "Release" -o "./publisher"
           Remove-Item -Path "Jellyfin.Plugin.Douban/Jellyfin.Plugin.Douban.csproj"
           Move-Item -Path "Jellyfin.Plugin.Douban/Jellyfin.Plugin.Douban.csproj.bak" -Destination "Jellyfin.Plugin.Douban/Jellyfin.Plugin.Douban.csproj"
-          Compress-Archive -Path "publisher/Jellyfin.Plugin.Douban.dll" -DestinationPath "publisher/dist/Jellyfin.Plugin.Douban.$env:XZ_VERSION.0.zip" -Force
+          Compress-Archive -Path publisher/Jellyfin.Plugin.Douban.dll,publisher/AnitomySharp.dll,publisher/HtmlAgilityPack.dll,publisher/HtmlAgilityPack.CssSelectors.dll,publisher/*.pdb -DestinationPath "publisher/dist/Jellyfin.Plugin.Douban.$env:XZ_VERSION.0.zip" -Force
           python publisher/update_manifest.py
       - name: Push to GitHub
         run: |
