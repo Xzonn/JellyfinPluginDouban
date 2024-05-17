@@ -25,7 +25,7 @@
       },
       {
         "checksum": "36FEB005387325A2E96A856B84B6E539",
-        "changelog": "https://xzonn.top/posts/Jellyfin-Plugin-Douban.html#%E6%9B%B4%E6%96%B0%E6%97%A5%E5%BF%97",
+        "changelog": "- 修复了人物元数据获取失败的问题。\n- 移除了对Open Douban的兼容。",
         "targetAbi": "10.8.0.0",
         "sourceUrl": "https://xzonn.top/JellyfinPluginDouban/dist/Jellyfin.Plugin.Douban.1.0.10.0.zip",
         "timestamp": "2024-05-17T09:26:25Z",
@@ -33,7 +33,7 @@
       },
       {
         "checksum": "D9709BD7E8AD37FEDE4A077CACDB31FC",
-        "changelog": "https://xzonn.top/posts/Jellyfin-Plugin-Douban.html#%E6%9B%B4%E6%96%B0%E6%97%A5%E5%BF%97",
+        "changelog": "- 修复了人物元数据获取失败的问题。\n- 移除了对Open Douban的兼容。",
         "targetAbi": "10.9.0.0",
         "sourceUrl": "https://xzonn.top/JellyfinPluginDouban/dist/Jellyfin.Plugin.Douban.2.0.1.0.zip",
         "timestamp": "2024-05-17T09:29:17Z",
