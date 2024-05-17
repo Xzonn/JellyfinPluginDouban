@@ -1,10 +1,11 @@
-﻿using AnitomySharp;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Providers;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Providers;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
+
+using static AnitomySharp.Element;
 
 namespace Jellyfin.Plugin.Douban.Provider;
 
@@ -24,7 +25,7 @@ public class EpisodeProvider(DoubanApi api, ILogger<EpisodeProvider> logger) : I
 
         var index = 0;
         var fileName = Path.GetFileName(info.Path);
-        var indexString = AnitomySharp.AnitomySharp.Parse(fileName).FirstOrDefault(p => p.Category == Element.ElementCategory.ElementEpisodeNumber)?.Value;
+        var indexString = AnitomySharpParser.Parse(fileName, ElementCategory.ElementEpisodeNumber);
         if (!string.IsNullOrEmpty(indexString)) { index = int.Parse(indexString); }
         if (index == 0) { index = info.IndexNumber ?? 0; }
         if (index == 0 || index > movie.EpisodeCount) { return result; }

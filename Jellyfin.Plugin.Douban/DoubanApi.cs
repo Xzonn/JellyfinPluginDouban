@@ -7,9 +7,10 @@ using MediaBrowser.Controller.Providers;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Providers;
 using Microsoft.Extensions.Logging;
-using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Web;
+
+using static AnitomySharp.Element;
 
 namespace Jellyfin.Plugin.Douban;
 
@@ -162,7 +163,7 @@ public partial class DoubanApi
             {
                 searchNames.Add(episodeInfo.SeriesProviderIds.GetValueOrDefault(MetadataProvider.Imdb.ToString()));
                 // For episode, DO NOT SEARCH NAME DIRECTLY
-                searchNames.Add(AnitomySharp.AnitomySharp.Parse(Path.GetFileName(info.Path)).FirstOrDefault(_ => _.Category == AnitomySharp.Element.ElementCategory.ElementAnimeTitle)?.Value);
+                searchNames.Add(AnitomySharpParser.Parse(Path.GetFileName(info.Path), ElementCategory.ElementAnimeTitle));
                 searchNames.Add(Path.GetFileName(Path.GetDirectoryName(info.Path)));
             }
             else
@@ -182,7 +183,7 @@ public partial class DoubanApi
                 }
                 searchNames.Add(info.OriginalTitle);
                 searchNames.Add(Path.GetFileName(info.Path));
-                searchNames.Add(AnitomySharp.AnitomySharp.Parse(Path.GetFileName(info.Path)).FirstOrDefault(_ => _.Category == AnitomySharp.Element.ElementCategory.ElementAnimeTitle)?.Value);
+                searchNames.Add(AnitomySharpParser.Parse(Path.GetFileName(info.Path), ElementCategory.ElementAnimeTitle));
             }
 
             searchNames = searchNames.Where(name =>
@@ -228,7 +229,7 @@ public partial class DoubanApi
                     if (searchResults.Count != 0) { break; }
                 }
 
-                newName = AnitomySharp.AnitomySharp.Parse(infoName).FirstOrDefault(_ => _.Category == AnitomySharp.Element.ElementCategory.ElementAnimeTitle)?.Value;
+                newName = AnitomySharpParser.Parse(infoName, ElementCategory.ElementAnimeTitle);
                 if (!string.IsNullOrEmpty(newName))
                 {
                     searchResults = await SearchMovie(newName.Replace(".", " "), isMovie, isFirstSeason, token);
