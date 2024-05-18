@@ -209,13 +209,13 @@ public partial class DoubanApi
                 // Season name is auto-generated, no need to search
                 if ((info is SeasonInfo || info is EpisodeInfo) && REGEX_AUTOMATIC_SEASON_NAME.IsMatch(name)) continue;
 
-                if (!searchNames.Contains(name)) { searchNames.Add(name); }
-
                 if ((info.Year ?? 0) > 0)
                 {
                     var yearName = $"{name} {info.Year}";
                     if (!searchNames.Contains(yearName)) { searchNames.Add(yearName); }
                 }
+
+                if (!searchNames.Contains(name)) { searchNames.Add(name); }
 
                 VideoResolver.TryCleanString(infoName, new Emby.Naming.Common.NamingOptions(), out var newName);
                 if (!string.IsNullOrEmpty(newName) && !searchNames.Contains(newName)) { searchNames.Add(newName); }
@@ -246,7 +246,7 @@ public partial class DoubanApi
             var season = REGEX_SEASON.Match(searchResults[0].Name);
             if (season.Success && !ONES.Contains(season.Groups[1].Value))
             {
-                searchResults = await SearchMovie(REGEX_SEASON.Replace(searchResults[0].Name, "第1季"), isMovie, isFirstSeason, token);
+                searchResults = await SearchMovie(REGEX_SEASON.Replace(searchResults[0].Name, " 第1季"), isMovie, isFirstSeason, token);
             }
         }
 
