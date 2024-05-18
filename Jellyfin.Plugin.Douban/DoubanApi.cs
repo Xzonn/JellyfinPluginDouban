@@ -11,6 +11,11 @@ using System.Text.RegularExpressions;
 using System.Web;
 
 using static AnitomySharp.Element;
+#if NET8_0_OR_GREATER
+using PersonType = Jellyfin.Data.Enums.PersonKind;
+#else
+using PersonType = MediaBrowser.Model.Entities.PersonType;
+#endif
 
 namespace Jellyfin.Plugin.Douban;
 
@@ -270,12 +275,21 @@ public partial class DoubanApi
 
     public static int TryParseDoubanId(IHasProviderIds info, bool ignoreSeasonIndex = false)
     {
-        int id;
+        int id = 0;
         if (info is EpisodeInfo episodeInfo)
         {
-            int.TryParse(episodeInfo.SeriesProviderIds.GetValueOrDefault(Constants.ProviderId), out id);
-            if (id == 0) { int.TryParse(episodeInfo.SeriesProviderIds.GetValueOrDefault(Constants.ProviderId_Old), out id); }
-            if (id == 0) { int.TryParse(episodeInfo.SeriesProviderIds.GetValueOrDefault(Constants.ProviderId_OpenDouban), out id); }
+#if NET8_0_OR_GREATER
+            int.TryParse(episodeInfo.SeasonProviderIds.GetValueOrDefault(Constants.ProviderId), out id);
+            if (id == 0) { int.TryParse(episodeInfo.SeasonProviderIds.GetValueOrDefault(Constants.ProviderId_Old), out id); }
+            if (id == 0) { int.TryParse(episodeInfo.SeasonProviderIds.GetValueOrDefault(Constants.ProviderId_OpenDouban), out id); }
+#endif
+
+            if (id == 0)
+            {
+                int.TryParse(episodeInfo.SeriesProviderIds.GetValueOrDefault(Constants.ProviderId), out id);
+                if (id == 0) { int.TryParse(episodeInfo.SeriesProviderIds.GetValueOrDefault(Constants.ProviderId_Old), out id); }
+                if (id == 0) { int.TryParse(episodeInfo.SeriesProviderIds.GetValueOrDefault(Constants.ProviderId_OpenDouban), out id); }
+            }
 
             if (id == 0)
             {
@@ -445,17 +459,25 @@ public partial class DoubanApi
                 {
                     Name = name,
                     ImageUrl = posterUrl,
-                    Type = ConvertTypeString(type) ?? ConvertTypeString(topType) ?? "",
+                    Type = ConvertTypeString(type) ?? ConvertTypeString(topType) ?? default,
                     Role = role,
                 };
                 result.SetProviderId(Constants.ProviderId, cid);
                 results.Add(result);
             }
         }
+#if NET8_0_OR_GREATER
+        results = results.Where(_ => _.Type != PersonType.Unknown).ToList();
+#else
         results = results.Where(_ => !string.IsNullOrEmpty(_.Type)).ToList();
+#endif
         return results;
 
+#if NET8_0_OR_GREATER
+        static PersonType? ConvertTypeString(string type)
+#else
         static string? ConvertTypeString(string type)
+#endif
         {
             return type switch
             {
