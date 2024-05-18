@@ -265,32 +265,55 @@ public partial class DoubanApi
         return results;
     }
 
-    public static int TryParseDoubanId(ItemLookupInfo info, bool ignoreSeasonIndex = false)
+    public static int TryParseDoubanId(IHasProviderIds info, bool ignoreSeasonIndex = false)
     {
-        int subjectId;
+        int id;
         if (info is EpisodeInfo episodeInfo)
         {
-            int.TryParse(episodeInfo.SeriesProviderIds.GetValueOrDefault(Constants.ProviderId), out subjectId);
+            int.TryParse(episodeInfo.SeriesProviderIds.GetValueOrDefault(Constants.ProviderId), out id);
+            if (id == 0) { int.TryParse(episodeInfo.SeriesProviderIds.GetValueOrDefault(Constants.ProviderId_Old), out id); }
+            if (id == 0) { int.TryParse(episodeInfo.SeriesProviderIds.GetValueOrDefault(Constants.ProviderId_OpenDouban), out id); }
 
-            if (subjectId == 0)
+            if (id == 0)
             {
-                var episodeId = episodeInfo.SeriesProviderIds.GetValueOrDefault(Constants.ProviderId);
+                var episodeId = episodeInfo.GetProviderId(Constants.ProviderId);
+                episodeId ??= episodeInfo.ProviderIds.GetValueOrDefault(Constants.ProviderId_Old);
+
                 if (!string.IsNullOrEmpty(episodeId) && episodeId.Contains("/episode/"))
                 {
-                    int.TryParse(episodeId.Split("/episode/")[0], out subjectId);
+                    int.TryParse(episodeId.Split("/episode/")[0], out id);
                 }
             }
         }
         else
         {
-            int.TryParse(info.GetProviderId(Constants.ProviderId), out subjectId);
+            int.TryParse(info.GetProviderId(Constants.ProviderId), out id);
+            if (id == 0) { int.TryParse(info.GetProviderId(Constants.ProviderId_Old), out id); }
+            if (id == 0) { int.TryParse(info.GetProviderId(Constants.ProviderId_OpenDouban), out id); }
 
-            if (subjectId == 0 && info is SeasonInfo seasonInfo && ((seasonInfo.IndexNumber ?? 0) < 2 || ignoreSeasonIndex))
+            if (id == 0 && info is SeasonInfo seasonInfo && ((seasonInfo.IndexNumber ?? 0) < 2 || ignoreSeasonIndex))
             {
-                int.TryParse(seasonInfo.SeriesProviderIds.GetValueOrDefault(Constants.ProviderId), out subjectId);
+                int.TryParse(seasonInfo.SeriesProviderIds.GetValueOrDefault(Constants.ProviderId), out id);
+                if (id == 0) { int.TryParse(seasonInfo.SeriesProviderIds.GetValueOrDefault(Constants.ProviderId_Old), out id); }
+                if (id == 0) { int.TryParse(seasonInfo.SeriesProviderIds.GetValueOrDefault(Constants.ProviderId_OpenDouban), out id); }
             }
         }
-        return subjectId;
+        return id;
+    }
+
+    public async Task<int> TryParseDoubanPersonageId(IHasProviderIds info, CancellationToken token = default)
+    {
+        if (!int.TryParse(info.GetProviderId(Constants.PersonageId), out var pid) && !int.TryParse(info.GetProviderId(Constants.PersonageId_Old), out pid))
+        {
+            // Fetch person by celebrity id
+            var cid = TryParseDoubanId(info);
+            if (cid != 0)
+            {
+
+                int.TryParse(await ConvertCelebrityIdToPersonageId(cid.ToString(), token), out pid);
+            }
+        }
+        return pid;
     }
 
     public async Task<ApiMovieSubject> FetchMovie(string sid, CancellationToken token = default)
@@ -364,7 +387,7 @@ public partial class DoubanApi
             var searchResults = (await GetMovieSearchResults(info, false, token)).ToList();
             if (searchResults.Count > 0)
             {
-                int.TryParse(searchResults[0].GetProviderId(Constants.ProviderId), out subjectId);
+                subjectId = TryParseDoubanId(searchResults[0]);
             }
         }
 
