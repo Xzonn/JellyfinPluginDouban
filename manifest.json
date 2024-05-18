@@ -5,7 +5,7 @@
     "name": "Douban",
     "description": "提供豆瓣电影/电视剧的元数据 Provide Movie/TV metadata from Douban",
     "owner": "Xzonn",
-    "overview": "**Jellyfin 豆瓣元数据插件**\n\n请参阅 **[详细说明](https://xzonn.top/posts/Jellyfin-Plugin-Douban.html)**。\n\n----\n\n**Douban Metadata Provider for Jellyfin**\n\nPlease see **[detailed information](https://xzonn.top/posts/Jellyfin-Plugin-Douban.html)** (in Chinese).",
+    "overview": "Jellyfin 豆瓣元数据插件 Douban Metadata Provider for Jellyfin",
     "imageUrl": "https://xzonn.top/JellyfinPluginDouban/Logo.png",
     "versions": [
       {

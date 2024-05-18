@@ -1,3 +1,6 @@
+temp/
+
 *.deps.json
 *.dll
 *.pdb
+*.psd
