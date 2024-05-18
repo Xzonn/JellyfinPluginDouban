@@ -3,9 +3,10 @@
     "category": "Metadata",
     "guid": "f962a752-15e8-4a43-b42a-6d9cfba35ce1",
     "name": "Douban",
-    "description": "Provide Movie/TV metadata from Douban",
+    "description": "提供豆瓣电影/电视剧的元数据 Provide Movie/TV metadata from Douban",
     "owner": "Xzonn",
-    "overview": "Douban Metadata Provider for Jellyfin",
+    "overview": "**Jellyfin 豆瓣元数据插件**\n\n请参阅 **[详细说明](https://xzonn.top/posts/Jellyfin-Plugin-Douban.html)**。\n\n----\n\n**Douban Metadata Provider for Jellyfin**\n\nPlease see **[detailed information](https://xzonn.top/posts/Jellyfin-Plugin-Douban.html)** (in Chinese).",
+    "imageUrl": "https://xzonn.top/JellyfinPluginDouban/Logo.png",
     "versions": [
       {
         "checksum": "DDE6BD69F0CCA6A555163DA49071BC1C",
@@ -24,32 +25,8 @@
         "version": "2.0.0.0"
       },
       {
-        "checksum": "36FEB005387325A2E96A856B84B6E539",
-        "changelog": "- 修复了人物元数据获取失败的问题。\n- 移除了对Open Douban的兼容。",
-        "targetAbi": "10.8.0.0",
-        "sourceUrl": "https://xzonn.top/JellyfinPluginDouban/dist/Jellyfin.Plugin.Douban.1.0.10.0.zip",
-        "timestamp": "2024-05-17T09:26:25Z",
-        "version": "1.0.10.0"
-      },
-      {
-        "checksum": "D9709BD7E8AD37FEDE4A077CACDB31FC",
-        "changelog": "- 修复了人物元数据获取失败的问题。\n- 移除了对Open Douban的兼容。",
-        "targetAbi": "10.9.0.0",
-        "sourceUrl": "https://xzonn.top/JellyfinPluginDouban/dist/Jellyfin.Plugin.Douban.2.0.1.0.zip",
-        "timestamp": "2024-05-17T09:29:17Z",
-        "version": "2.0.1.0"
-      },
-      {
-        "checksum": "D9B31F02430BDB3E575753B6932D250D",
-        "changelog": "https://xzonn.top/posts/Jellyfin-Plugin-Douban.html#%E6%9B%B4%E6%96%B0%E6%97%A5%E5%BF%97",
-        "targetAbi": "10.9.0.0",
-        "sourceUrl": "https://xzonn.top/JellyfinPluginDouban/dist/Jellyfin.Plugin.Douban.2.0.2.0.zip",
-        "timestamp": "2024-05-17T10:38:41Z",
-        "version": "2.0.2.0"
-      },
-      {
         "checksum": "85AD8CF5E8BCF3CD244D23CEA38C9822",
-        "changelog": "https://xzonn.top/posts/Jellyfin-Plugin-Douban.html#%E6%9B%B4%E6%96%B0%E6%97%A5%E5%BF%97",
+        "changelog": "- 修复了无法将标识符保存到.nfo文件的问题。 ([#3](https://github.com/Xzonn/JellyfinPluginDouban/issues/3))\n- 部分细节修正。",
         "targetAbi": "10.8.0.0",
         "sourceUrl": "https://xzonn.top/JellyfinPluginDouban/dist/Jellyfin.Plugin.Douban.1.1.0.0.zip",
         "timestamp": "2024-05-18T11:11:43Z",
@@ -57,7 +34,7 @@
       },
       {
         "checksum": "392F75D8614A39C2A7E0AE245D485A85",
-        "changelog": "https://xzonn.top/posts/Jellyfin-Plugin-Douban.html#%E6%9B%B4%E6%96%B0%E6%97%A5%E5%BF%97",
+        "changelog": "- 修复了无法将标识符保存到.nfo文件的问题。 ([#3](https://github.com/Xzonn/JellyfinPluginDouban/issues/3))\n- 部分细节修正。",
         "targetAbi": "10.9.0.0",
         "sourceUrl": "https://xzonn.top/JellyfinPluginDouban/dist/Jellyfin.Plugin.Douban.2.1.0.0.zip",
         "timestamp": "2024-05-18T11:22:24Z",
