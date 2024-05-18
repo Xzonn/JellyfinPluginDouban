@@ -45,7 +45,8 @@ namespace Jellyfin.Plugin.Douban.Test
 
             list = await _doubanApi.GetMovieSearchResults(new SeriesInfo()
             {
-                Name = "三体 2024",
+                Name = "三体",
+                Year = 2024,
             });
             Assert.NotEmpty(list);
             Assert.Equal("35196946", list[0].GetProviderId(Constants.ProviderId));

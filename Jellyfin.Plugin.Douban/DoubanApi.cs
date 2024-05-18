@@ -8,9 +8,10 @@ using MediaBrowser.Controller.Providers;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Providers;
 using Microsoft.Extensions.Logging;
-using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Web;
+
+using static AnitomySharp.Element;
 
 namespace Jellyfin.Plugin.Douban;
 
@@ -53,7 +54,6 @@ public partial class DoubanApi
         }
     }
 
-
     public DoubanApi(IHttpClientFactory httpClientFactory, ILogger<DoubanApi> log)
     {
         _httpClient = httpClientFactory.CreateClient();
@@ -68,7 +68,9 @@ public partial class DoubanApi
 
     public async Task<List<ApiMovieSubject>> SearchMovie(string keyword, bool isMovie = true, bool isFirstSeason = false, CancellationToken token = default)
     {
-        keyword = keyword.Trim();
+        token.ThrowIfCancellationRequested();
+
+        keyword = keyword.Replace(".", " ").Trim();
         if (string.IsNullOrEmpty(keyword)) { return []; }
 
         _log.LogDebug("Searching movie: {keyword} (isMovie: {isMovie}, isFirstSeason: {isFirstSeason})", keyword, isMovie, isFirstSeason);
@@ -80,7 +82,7 @@ public partial class DoubanApi
         htmlDoc.LoadHtml(responseText);
 
         var resultList = htmlDoc.QuerySelector(".result-list");
-        if (resultList == null)
+        if (resultList is null)
         {
             _log.LogDebug("No results found: {keyword}", keyword);
             return [];
@@ -119,7 +121,10 @@ public partial class DoubanApi
         if (!isMovie && isFirstSeason)
         {
             var first = results[0].Name!;
-            results = [.. results.OrderBy(_ => _.Name != first && first.StartsWith(_.Name!) ? 0 : 1)];
+            if (first != keyword)
+            {
+                results = [.. results.OrderBy(_ => _.Name != first && first.StartsWith(_.Name!) ? 0 : 1)];
+            }
         }
         if (results.Count == 0)
         {
@@ -154,57 +159,70 @@ public partial class DoubanApi
         var isMovie = info is MovieInfo;
         // For series, if the name does not include a season name, search for the first season
         // For seasons, if the index < 2, search for the first season
-        var isFirstSeason = (info is SeriesInfo && !REGEX_SEASON.IsMatch(infoName)) || (info is SeasonInfo && info.IndexNumber < 2);
+        // Otherwise, if the name includes "第一季", search for the first season
+        var isFirstSeason = (info is SeriesInfo && !REGEX_SEASON.IsMatch(info.Name ?? "")) || (info is SeasonInfo && (info.IndexNumber ?? 0) < 2) || ONES.Contains(REGEX_SEASON.Match(info.Name ?? "")?.Groups[1].Value ?? "");
+
         if (searchResults.Count == 0)
         {
-            var searchNames = new List<string?>();
+            var names = new List<string?>();
 
             if (info is EpisodeInfo episodeInfo)
             {
-                searchNames.Add(episodeInfo.SeriesProviderIds.GetValueOrDefault(MetadataProvider.Imdb.ToString()));
                 // For episode, DO NOT SEARCH NAME DIRECTLY
-                searchNames.Add(AnitomySharp.AnitomySharp.Parse(Path.GetFileName(info.Path)).FirstOrDefault(_ => _.Category == AnitomySharp.Element.ElementCategory.ElementAnimeTitle)?.Value);
-                searchNames.Add(Path.GetFileName(Path.GetDirectoryName(info.Path)));
+                names.Add(AnitomySharpParser.Parse(Path.GetFileName(info.Path), ElementCategory.ElementAnimeTitle));
+                names.Add(Path.GetFileName(Path.GetDirectoryName(info.Path)));
             }
             else
             {
-                searchNames.Add(info.GetProviderId(MetadataProvider.Imdb));
-                if (info is SeasonInfo seasonInfo && info.IndexNumber < 2)
+                names.Add(info.GetProviderId(MetadataProvider.Imdb));
+                if (info is SeasonInfo seasonInfo && isFirstSeason)
                 {
-                    searchNames.Add(seasonInfo.SeriesProviderIds.GetValueOrDefault(MetadataProvider.Imdb.ToString()));
+                    names.Add(seasonInfo.SeriesProviderIds.GetValueOrDefault(MetadataProvider.Imdb.ToString()));
                 }
-                if (!string.IsNullOrEmpty(infoName))
+                names.Add(infoName);
+                names.Add(info.OriginalTitle);
+
+                if (info is SeasonInfo && info.IndexNumber > 1)
                 {
-                    if (info.Year is not null && info.Year > 0)
+                    int parentId = TryParseDoubanId(info, true);
+                    if (parentId != 0)
                     {
-                        searchNames.Add($"{infoName} {info.Year}");
+                        var subject = await FetchMovie(parentId.ToString(), token);
+                        if (!string.IsNullOrWhiteSpace(subject.Name))
+                        {
+                            names.Add($"{REGEX_SEASON.Replace(subject.Name, "")} 第{info.IndexNumber}季");
+                        }
                     }
-                    searchNames.Add(infoName);
+                    if (!string.IsNullOrWhiteSpace(infoName))
+                    {
+                        names.Add($"{REGEX_SEASON.Replace(infoName, "")} 第{info.IndexNumber}季");
+                    }
                 }
-                searchNames.Add(info.OriginalTitle);
-                searchNames.Add(Path.GetFileName(info.Path));
+
+                names.Add(Path.GetFileName(info.Path));
+                names.Add(AnitomySharpParser.Parse(Path.GetFileName(info.Path), ElementCategory.ElementAnimeTitle));
             }
 
-            searchNames = searchNames.Where(name =>
+            var searchNames = new List<string>();
+            foreach (var name in names)
             {
-                if (string.IsNullOrWhiteSpace(name)) return false;
+                if (string.IsNullOrWhiteSpace(name)) continue;
                 // Season name is auto-generated, no need to search
-                if ((info is SeasonInfo || info is EpisodeInfo) && REGEX_AUTOMATIC_SEASON_NAME.IsMatch(name)) return false;
-                return true;
-            }).ToList();
+                if ((info is SeasonInfo || info is EpisodeInfo) && REGEX_AUTOMATIC_SEASON_NAME.IsMatch(name)) continue;
 
-            if (info is SeasonInfo && info.IndexNumber > 1)
-            {
-                int parentId = TryParseDoubanId(info, true);
-                if (parentId != 0)
+                if ((info.Year ?? 0) > 0)
                 {
-                    var subject = await FetchMovie(parentId.ToString(), token);
-                    if (subject != null)
-                    {
-                        searchNames.Add($"{REGEX_SEASON.Replace(subject.Name!, "")} 第{info.IndexNumber}季");
-                    }
+                    var yearName = $"{name} {info.Year}";
+                    if (!searchNames.Contains(yearName)) { searchNames.Add(yearName); }
                 }
-                if (!string.IsNullOrWhiteSpace(infoName)) { searchNames.Add($"{REGEX_SEASON.Replace(infoName, "")} 第{info.IndexNumber}季"); }
+
+                if (!searchNames.Contains(name)) { searchNames.Add(name); }
+
+                VideoResolver.TryCleanString(infoName, new Emby.Naming.Common.NamingOptions(), out var newName);
+                if (!string.IsNullOrEmpty(newName) && !searchNames.Contains(newName)) { searchNames.Add(newName); }
+
+                newName = AnitomySharpParser.Parse(infoName, ElementCategory.ElementAnimeTitle);
+                if (!string.IsNullOrEmpty(newName) && !searchNames.Contains(newName)) { searchNames.Add(newName); }
             }
 
             if (searchNames.Count == 0)
@@ -218,34 +236,21 @@ public partial class DoubanApi
 
             foreach (var name in searchNames)
             {
-                searchResults = await SearchMovie(name!.Replace(".", " ").Trim(), isMovie, isFirstSeason, token);
-                if (searchResults.Count != 0) { break; }
-
-                VideoResolver.TryCleanString(infoName, new Emby.Naming.Common.NamingOptions(), out var newName);
-                if (!string.IsNullOrEmpty(newName))
-                {
-                    searchResults = await SearchMovie(newName.Replace(".", " "), isMovie, isFirstSeason, token);
-                    if (searchResults.Count != 0) { break; }
-                }
-
-                newName = AnitomySharp.AnitomySharp.Parse(infoName).FirstOrDefault(_ => _.Category == AnitomySharp.Element.ElementCategory.ElementAnimeTitle)?.Value;
-                if (!string.IsNullOrEmpty(newName))
-                {
-                    searchResults = await SearchMovie(newName.Replace(".", " "), isMovie, isFirstSeason, token);
-                    if (searchResults.Count != 0) { break; }
-                }
+                searchResults = await SearchMovie(name, isMovie, isFirstSeason, token);
+                if (searchResults.Count > 0) { break; }
             }
         }
 
         if (searchResults.Count > 0 && isFirstSeason)
         {
             // If the name of search result contains "第x季" but x != 1, search for the first season again
-            var season = REGEX_SEASON.Match(searchResults[0].Name!);
+            var season = REGEX_SEASON.Match(searchResults[0].Name);
             if (season.Success && !ONES.Contains(season.Groups[1].Value))
             {
-                searchResults = await SearchMovie(REGEX_SEASON.Replace(searchResults[0].Name!, "第1季"), isMovie, isFirstSeason, token);
+                searchResults = await SearchMovie(REGEX_SEASON.Replace(searchResults[0].Name, " 第1季"), isMovie, isFirstSeason, token);
             }
         }
+
         var results = searchResults.Select(_ =>
         {
             var result = new RemoteSearchResult
@@ -264,36 +269,61 @@ public partial class DoubanApi
         return results;
     }
 
-    public static int TryParseDoubanId(ItemLookupInfo info, bool ignoreSeasonIndex = false)
+    public static int TryParseDoubanId(IHasProviderIds info, bool ignoreSeasonIndex = false)
     {
-        int subjectId;
+        int id;
         if (info is EpisodeInfo episodeInfo)
         {
-            int.TryParse(episodeInfo.SeasonProviderIds.GetValueOrDefault(Constants.ProviderId), out subjectId);
-            if (subjectId == 0)
+            int.TryParse(episodeInfo.SeasonProviderIds.GetValueOrDefault(Constants.ProviderId), out id);
+            if (id == 0) { int.TryParse(episodeInfo.SeasonProviderIds.GetValueOrDefault(Constants.ProviderId_Old), out id); }
+            if (id == 0) { int.TryParse(episodeInfo.SeasonProviderIds.GetValueOrDefault(Constants.ProviderId_OpenDouban), out id); }
+
+            if (id == 0)
             {
-                int.TryParse(episodeInfo.SeriesProviderIds.GetValueOrDefault(Constants.ProviderId), out subjectId);
+                int.TryParse(episodeInfo.SeriesProviderIds.GetValueOrDefault(Constants.ProviderId), out id);
+                if (id == 0) { int.TryParse(episodeInfo.SeriesProviderIds.GetValueOrDefault(Constants.ProviderId_Old), out id); }
+                if (id == 0) { int.TryParse(episodeInfo.SeriesProviderIds.GetValueOrDefault(Constants.ProviderId_OpenDouban), out id); }
             }
 
-            if (subjectId == 0)
+            if (id == 0)
             {
-                var episodeId = episodeInfo.SeriesProviderIds.GetValueOrDefault(Constants.ProviderId);
+                var episodeId = episodeInfo.GetProviderId(Constants.ProviderId);
+                episodeId ??= episodeInfo.ProviderIds.GetValueOrDefault(Constants.ProviderId_Old);
+
                 if (!string.IsNullOrEmpty(episodeId) && episodeId.Contains("/episode/"))
                 {
-                    int.TryParse(episodeId.Split("/episode/")[0], out subjectId);
+                    int.TryParse(episodeId.Split("/episode/")[0], out id);
                 }
             }
         }
         else
         {
-            int.TryParse(info.GetProviderId(Constants.ProviderId), out subjectId);
+            int.TryParse(info.GetProviderId(Constants.ProviderId), out id);
+            if (id == 0) { int.TryParse(info.GetProviderId(Constants.ProviderId_Old), out id); }
+            if (id == 0) { int.TryParse(info.GetProviderId(Constants.ProviderId_OpenDouban), out id); }
 
-            if (subjectId == 0 && info is SeasonInfo seasonInfo && (seasonInfo.IndexNumber < 2 || ignoreSeasonIndex))
+            if (id == 0 && info is SeasonInfo seasonInfo && ((seasonInfo.IndexNumber ?? 0) < 2 || ignoreSeasonIndex))
             {
-                int.TryParse(seasonInfo.SeriesProviderIds.GetValueOrDefault(Constants.ProviderId), out subjectId);
+                int.TryParse(seasonInfo.SeriesProviderIds.GetValueOrDefault(Constants.ProviderId), out id);
+                if (id == 0) { int.TryParse(seasonInfo.SeriesProviderIds.GetValueOrDefault(Constants.ProviderId_Old), out id); }
+                if (id == 0) { int.TryParse(seasonInfo.SeriesProviderIds.GetValueOrDefault(Constants.ProviderId_OpenDouban), out id); }
             }
         }
-        return subjectId;
+        return id;
+    }
+
+    public async Task<int> TryParseDoubanPersonageId(IHasProviderIds info, CancellationToken token = default)
+    {
+        if (!int.TryParse(info.GetProviderId(Constants.PersonageId), out var pid) && !int.TryParse(info.GetProviderId(Constants.PersonageId_Old), out pid))
+        {
+            // Fetch person by celebrity id
+            var cid = TryParseDoubanId(info);
+            if (cid != 0)
+            {
+                int.TryParse(await ConvertCelebrityIdToPersonageId(cid.ToString(), token), out pid);
+            }
+        }
+        return pid;
     }
 
     public async Task<ApiMovieSubject> FetchMovie(string sid, CancellationToken token = default)
@@ -301,23 +331,23 @@ public partial class DoubanApi
         _log.LogDebug("Fetching movie: {sid}", sid);
         string url = $"https://movie.douban.com/subject/{sid}/";
         string? responseText = await FetchUrl(url, token);
-        if (string.IsNullOrEmpty(responseText)) { return new ApiMovieSubject(); }
+        if (string.IsNullOrEmpty(responseText)) { return new(); }
         var htmlDoc = new HtmlDocument();
         htmlDoc.LoadHtml(responseText);
 
         var name = HttpUtility.HtmlDecode(REGEX_DOUBAN_POSTFIX.Replace(htmlDoc.QuerySelector("title").InnerText.Trim(), ""));
         _log.LogDebug("Sid {sid} is: {name}", sid, name);
         var content = htmlDoc.QuerySelector("#content");
-        var posterId = REGEX_IMAGE.Match(content.QuerySelector("#mainpic img").Attributes["src"].Value).Groups[1].Value;
-        var originalName = content.QuerySelector("h1 span").InnerText.Replace(name, "").Trim();
-        var year = Convert.ToInt32(content.QuerySelector("h1 .year").InnerText.Trim().TrimStart('(').TrimEnd(')'));
-        var rating = content.QuerySelector("#interest_sectl .rating_num").InnerText.Trim();
+        var posterId = REGEX_IMAGE.Match(content?.QuerySelector("#mainpic img")?.Attributes["src"].Value ?? "")?.Groups[1].Value;
+        var originalName = content?.QuerySelector("h1 span")?.InnerText.Replace(name, "").Trim();
+        var year = Convert.ToInt32(content?.QuerySelector("h1 .year")?.InnerText.Trim().TrimStart('(').TrimEnd(')'));
+        var rating = content?.QuerySelector("#interest_sectl .rating_num")?.InnerText.Trim();
         rating = string.IsNullOrEmpty(rating) ? "0.0" : rating;
-        var info = content.QuerySelector("#info").InnerText.Trim().Split("\n").Select(_ => _.Trim().Split(": ")).Where(_ => _.Length > 1).ToDictionary(_ => _[0], _ => string.Join(": ", _[1..]).Trim());
+        var info = content?.QuerySelector("#info")?.InnerText.Trim().Split("\n").Select(_ => _.Trim().Split(":", 2)).Where(_ => _.Length > 1).ToDictionary(_ => _[0], _ => _[1].Trim()) ?? [];
         var type = "电影";
         if (info.ContainsKey("集数") || info.ContainsKey("单集片长")) { type = "电视剧"; }
-        var intro = string.Join("\n", (content.QuerySelector("#link-report-intra span.all") ?? content.QuerySelector("#link-report-intra span"))?.InnerText.Trim().Split("\n").Select(_ => _.Trim()) ?? []);
-        var screenTime = info!.GetValueOrDefault("上映日期", info!.GetValueOrDefault("首播", ""))!.Split("/").Select(_ => REGEX_BRACKET.Replace(_.Trim(), "")).Where(_ => REGEX_DATE.IsMatch(_)).FirstOrDefault();
+        var intro = string.Join("\n", (content?.QuerySelector("#link-report-intra span.all") ?? content?.QuerySelector("#link-report-intra span"))?.InnerText.Trim().Split("\n").Select(_ => _.Trim()) ?? []);
+        var screenTime = info.GetValueOrDefault("上映日期", info.GetValueOrDefault("首播", "")).Split("/").Select(_ => REGEX_BRACKET.Replace(_.Trim(), "")).Where(_ => REGEX_DATE.IsMatch(_)).FirstOrDefault();
         var seasonIndex = 0;
         if (info.TryGetValue("季数", out string? seasonNumber))
         {
@@ -335,7 +365,7 @@ public partial class DoubanApi
                 seasonIndex = ConvertChineseNumberToNumber(REGEX_SEASON.Match(name).Groups[1].Value);
             }
         }
-        int.TryParse(info!.GetValueOrDefault("集数", "0"), out var episodeCount);
+        int.TryParse(info.GetValueOrDefault("集数", "0"), out var episodeCount);
 
         var result = new ApiMovieSubject()
         {
@@ -364,10 +394,10 @@ public partial class DoubanApi
         int subjectId = TryParseDoubanId(info);
         if (subjectId == 0)
         {
-            var searchResults = (await GetMovieSearchResults(info, false, token)).ToList();
+            var searchResults = await GetMovieSearchResults(info, false, token);
             if (searchResults.Count > 0)
             {
-                int.TryParse(searchResults[0].GetProviderId(Constants.ProviderId), out subjectId);
+                subjectId = TryParseDoubanId(searchResults[0]);
             }
         }
 
@@ -389,55 +419,68 @@ public partial class DoubanApi
         var htmlDoc = new HtmlDocument();
         htmlDoc.LoadHtml(responseText);
 
-        var celebrities = htmlDoc.QuerySelectorAll(".celebrities-list .celebrity");
-        var results = celebrities.Select(_ =>
+        var lists = htmlDoc.QuerySelectorAll("#celebrities .list-wrapper");
+        List<PersonInfo> results = [];
+        foreach (var list in lists)
         {
-            var link = _.QuerySelector("a.name");
-            var name = link.InnerText.Trim().Split(" ")[0];
-            var cid = REGEX_CELEBRITY.Match(link.Attributes["href"].Value).Groups[1].Value;
-            var posterUrl = REGEX_IMAGE_URL.Match(_.QuerySelector(".avatar").Attributes["style"].Value).Groups[1].Value;
-            if (!Configuration.FetchCelebrityImages || posterUrl.Contains("celebrity-default"))
+            var topType = (list.QuerySelector("h2")?.InnerText.Trim().Split(" ") ?? [""])[0];
+            foreach (var _ in list.QuerySelectorAll("ul.celebrities-list li.celebrity"))
             {
-                posterUrl = null;
-            }
-            else
-            {
-                posterUrl = REGEX_DOUBANIO_HOST.Replace(posterUrl, Configuration.CdnServer);
-            }
-            string[] roleText = [""];
-            if (_.QuerySelector(".role") is HtmlNode __) { roleText = __.InnerText.Trim().Split(" "); }
-            var type = roleText[0];
-            var role = "";
-            if (roleText.Contains("(饰"))
-            {
-                role = string.Join(" ", roleText[(Array.IndexOf(roleText, "(饰") + 1)..]).TrimEnd(')');
-            }
-            else if (roleText.Contains("(配"))
-            {
-                role = string.Join(" ", roleText[(Array.IndexOf(roleText, "(配") + 1)..]).TrimEnd(')');
-            }
-            var result = new PersonInfo()
-            {
-                Name = name,
-                ImageUrl = posterUrl,
-                Type = type switch
+                var link = _.QuerySelector("a.name");
+                var name = link?.InnerText.Trim().Split(" ")[0];
+                var cid = REGEX_CELEBRITY.Match(link?.Attributes["href"].Value ?? "")?.Groups[1].Value;
+                var posterUrl = REGEX_IMAGE_URL.Match(_.QuerySelector(".avatar")?.Attributes["style"].Value ?? "")?.Groups[1].Value;
+                if (!Configuration.FetchCelebrityImages || (posterUrl ?? "").Contains("celebrity-default"))
                 {
-                    "导演" => PersonKind.Director,
-                    "演员" => PersonKind.Actor,
-                    "配音" => PersonKind.Actor,
-                    "编剧" => PersonKind.Writer,
-                    "制片人" => PersonKind.Producer,
-                    "制作人" => PersonKind.Producer,
-                    "作曲" => PersonKind.Composer,
-                    "音乐" => PersonKind.Composer,
-                    _ => PersonKind.Unknown,
-                },
-                Role = role,
-            };
-            result.SetProviderId(Constants.ProviderId, cid);
-            return result;
-        }).Where(_ => _.Type != PersonKind.Unknown).ToList();
+                    posterUrl = null;
+                }
+                else
+                {
+                    posterUrl = REGEX_DOUBANIO_HOST.Replace(posterUrl!, Configuration.CdnServer);
+                }
+                string[] roleText = _.QuerySelector(".role")?.InnerText.Trim().Split(" ") ?? [topType];
+                var type = roleText[0];
+                var role = "";
+                if (roleText.Contains("(饰"))
+                {
+                    role = string.Join(" ", roleText[(Array.IndexOf(roleText, "(饰") + 1)..]).TrimEnd(')');
+                }
+                else if (roleText.Contains("(配"))
+                {
+                    role = string.Join(" ", roleText[(Array.IndexOf(roleText, "(配") + 1)..]).TrimEnd(')');
+                }
+                var result = new PersonInfo()
+                {
+                    Name = name,
+                    ImageUrl = posterUrl,
+                    Type = ConvertTypeString(type) ?? ConvertTypeString(topType) ?? PersonKind.Unknown,
+                    Role = role,
+                };
+                result.SetProviderId(Constants.ProviderId, cid);
+                results.Add(result);
+            }
+        }
+        results = results.Where(_ => _.Type == PersonKind.Unknown).ToList();
         return results;
+
+        static PersonKind? ConvertTypeString(string type)
+        {
+            return type switch
+            {
+                "导演" => PersonKind.Director,
+                "演员" => PersonKind.Actor,
+                "配音" => PersonKind.Actor,
+                "编剧" => PersonKind.Writer,
+                "脚本" => PersonKind.Writer,
+                "剧本" => PersonKind.Writer,
+                "制片人" => PersonKind.Producer,
+                "制作人" => PersonKind.Producer,
+                "作曲" => PersonKind.Composer,
+                "音乐" => PersonKind.Composer,
+                "编曲" => PersonKind.Arranger,
+                _ => null,
+            };
+        }
     }
 
     public async Task<List<RemoteImageInfo>> FetchMovieImages(string sid, string type = "R", ImageType imageType = ImageType.Primary, CancellationToken token = default)
@@ -452,7 +495,7 @@ public partial class DoubanApi
         var results = htmlDoc.QuerySelectorAll(".article ul li").Select(_ =>
         {
             var posterId = REGEX_IMAGE.Match(_.QuerySelector("img").Attributes["src"].Value).Groups[1].Value;
-            var size = _.QuerySelector(".prop").InnerText.Trim().Split("x");
+            var size = _.QuerySelector(".prop")?.InnerText.Trim().Split("x") ?? ["0", "0"];
             var width = Convert.ToInt32(size[0]);
             var height = Convert.ToInt32(size[1]);
             return new RemoteImageInfo()
@@ -480,7 +523,7 @@ public partial class DoubanApi
 
         var title = htmlDoc.QuerySelector("title").InnerText.Trim();
         _log.LogDebug("Episode {sid}/{index} is: {title}", sid, index, title);
-        var info = htmlDoc.QuerySelectorAll("#content .ep-info li").Select(_ => _.InnerText.Trim().Split(":\n")).Where(_ => _.Length > 1).ToDictionary(_ => _[0], _ => string.Join(":\n", _[1..]).Trim());
+        var info = htmlDoc.QuerySelectorAll("#content .ep-info li").Select(_ => _.InnerText.Trim().Split(":", 2)).Where(_ => _.Length > 1).ToDictionary(_ => _[0], _ => string.Join(":\n", _[1..]).Trim()) ?? [];
         var name = info!.GetValueOrDefault("本集中文名", "暂无，欢迎添加");
         var originalName = info!.GetValueOrDefault("本集原名", "暂无，欢迎添加");
         var screenTimeStr = info!.GetValueOrDefault("播放时间", "暂无，欢迎添加");
@@ -490,7 +533,7 @@ public partial class DoubanApi
 
         var result = new ApiEpisodeSubject()
         {
-            Name = name == "暂无，欢迎添加" ? null : name,
+            Name = name == "暂无，欢迎添加" ? "" : name,
             OriginalName = originalName == "暂无，欢迎添加" ? null : originalName,
             ScreenTime = screenTime == DateTime.MinValue ? null : screenTime,
             Intro = info!.GetValueOrDefault("剧情简介", "暂无，欢迎添加") == "暂无，欢迎添加" ? null : intro,
@@ -545,7 +588,7 @@ public partial class DoubanApi
     public async Task<string> ConvertCelebrityIdToPersonageId(string cid, CancellationToken token = default)
     {
         var head = await _httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Head, $"https://movie.douban.com/celebrity/{cid}/"), token);
-        var pid = REGEX_PERSONAGE_ID.Match(head.RequestMessage?.RequestUri?.ToString() ?? "").Groups[1].Value;
+        var pid = REGEX_PERSONAGE_ID.Match(head.RequestMessage?.RequestUri?.ToString() ?? "")?.Groups[1].Value ?? "";
         return pid;
     }
 
@@ -654,6 +697,8 @@ public partial class DoubanApi
 
     private static int ConvertChineseNumberToNumber(string chinese)
     {
+        if (string.IsNullOrWhiteSpace(chinese)) { return 0; }
+        chinese = chinese.Trim();
         if (int.TryParse(chinese, out int result)) { return result; }
         int unit = 1;
         for (int i = chinese.Length - 1; i > -1; --i)

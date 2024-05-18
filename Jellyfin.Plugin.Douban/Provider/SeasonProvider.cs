@@ -15,7 +15,7 @@ public class SeasonProvider(DoubanApi api, ILogger<SeasonProvider> logger) : IRe
     public async Task<MetadataResult<Season>> GetMetadata(SeasonInfo info, CancellationToken token)
     {
         token.ThrowIfCancellationRequested();
-        logger.LogDebug("SeasonInfo: {info}", JsonSerializer.Serialize(info, options: Constants.JsonSerializerOptions));
+        logger.LogDebug("SeasonInfo: {info:l}", JsonSerializer.Serialize(info, options: Constants.JsonSerializerOptions));
         var result = new MetadataResult<Season> { ResultLanguage = Constants.Language };
 
         var subject = await api.FetchMovie(info, token);
@@ -47,7 +47,7 @@ public class SeasonProvider(DoubanApi api, ILogger<SeasonProvider> logger) : IRe
 
     public async Task<IEnumerable<RemoteSearchResult>> GetSearchResults(SeasonInfo info, CancellationToken token)
     {
-        logger.LogDebug("SeasonInfo: {info}", JsonSerializer.Serialize(info, options: Constants.JsonSerializerOptions));
+        logger.LogDebug("SeasonInfo: {info:l}", JsonSerializer.Serialize(info, options: Constants.JsonSerializerOptions));
         return await api.GetMovieSearchResults(info, true, token);
     }
 

@@ -15,7 +15,7 @@ public class MovieProvider(DoubanApi api, ILogger<MovieProvider> logger) : IRemo
     public async Task<MetadataResult<Movie>> GetMetadata(MovieInfo info, CancellationToken token)
     {
         token.ThrowIfCancellationRequested();
-        logger.LogDebug("MovieInfo: {info}", JsonSerializer.Serialize(info, options: Constants.JsonSerializerOptions));
+        logger.LogDebug("MovieInfo: {info:l}", JsonSerializer.Serialize(info, options: Constants.JsonSerializerOptions));
         var result = new MetadataResult<Movie> { ResultLanguage = Constants.Language };
 
         var subject = await api.FetchMovie(info, token);
@@ -46,7 +46,7 @@ public class MovieProvider(DoubanApi api, ILogger<MovieProvider> logger) : IRemo
 
     public async Task<IEnumerable<RemoteSearchResult>> GetSearchResults(MovieInfo info, CancellationToken token)
     {
-        logger.LogDebug("MovieInfo: {info}", JsonSerializer.Serialize(info, options: Constants.JsonSerializerOptions));
+        logger.LogDebug("MovieInfo: {info:l}", JsonSerializer.Serialize(info, options: Constants.JsonSerializerOptions));
         return await api.GetMovieSearchResults(info, true, token);
     }
 
