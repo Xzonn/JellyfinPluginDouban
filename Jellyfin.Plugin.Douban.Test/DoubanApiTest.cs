@@ -89,6 +89,10 @@ namespace Jellyfin.Plugin.Douban.Test
             list = await _doubanApi.FetchMovieCelebrities("4074292");
             Assert.NotEmpty(list);
             Assert.Equal("石原立也", list[0].Name ?? "");
+
+            list = await _doubanApi.FetchMovieCelebrities("26387719");
+            Assert.NotEmpty(list);
+            Assert.Equal("木村尚", list[0].Name ?? "");
         }
 
         [Fact]

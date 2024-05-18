@@ -34,7 +34,7 @@ public partial class DoubanApi
     private static Regex REGEX_IMAGE_URL => new(@"url\((.+?\.(?:webp|png|jpg|jpeg|gif))\)");
     private static Regex REGEX_ORIGINAL_NAME => new(@"^原名:");
     private static Regex REGEX_AUTOMATIC_SEASON_NAME => new(@"^ *(?:第 *\d+ *季|Season \d+|未知季|Season Unknown|Specials) *$");
-    private static Regex REGEX_SEASON => new(@" *第([一二三四五六七八九十百千万\d]+)[季期]");
+    private static Regex REGEX_SEASON = new(@" *第(?<seasonMatch>[一二三四五六七八九十百千万\d]+)[季期]|[^\d\s'](?<seasonMatch>\d{1,2})$");
     private static Regex REGEX_DOUBAN_POSTFIX => new(@" \(豆瓣\)$");
     private static Regex REGEX_BRACKET => new(@"\(.+?\)?$");
     private static Regex REGEX_DATE => new(@"\d{4}-\d\d-\d\d");
@@ -161,10 +161,12 @@ public partial class DoubanApi
 
         var infoName = (string.IsNullOrEmpty(info.Name) || REGEX_AUTOMATIC_SEASON_NAME.IsMatch(info.Name)) ? "" : info.Name;
         var isMovie = info is MovieInfo;
-        // For series, if the name does not include a season name, search for the first season
-        // For seasons, if the index < 2, search for the first season
-        // Otherwise, if the name includes "第一季", search for the first season
-        var isFirstSeason = (info is SeriesInfo && !REGEX_SEASON.IsMatch(info.Name ?? "")) || (info is SeasonInfo && (info.IndexNumber ?? 0) < 2) || ONES.Contains(REGEX_SEASON.Match(info.Name ?? "")?.Groups[1].Value ?? "");
+        // For series, if the name does not include a seasonMatch name, search for the first seasonMatch
+        // For seasons, if the index < 2, search for the first seasonMatch
+        // Otherwise, if the name includes "第一季", search for the first seasonMatch
+        var seasonMatch = REGEX_SEASON.Match(info.Name ?? "");
+        var season = ConvertChineseNumberToNumber(seasonMatch.Groups.GetValueOrDefault("season")?.Value ?? "");
+        var isFirstSeason = ((info is SeriesInfo && !seasonMatch.Success) || (info is SeasonInfo && (info.IndexNumber ?? 0) < 2) || season == 1) && !(seasonMatch.Success && season != 1);
 
         if (searchResults.Count == 0)
         {
@@ -247,7 +249,7 @@ public partial class DoubanApi
 
         if (searchResults.Count > 0 && isFirstSeason)
         {
-            // If the name of search result contains "第x季" but x != 1, search for the first season again
+            // If the name of search result contains "第x季" but x != 1, search for the first seasonMatch again
             var season = REGEX_SEASON.Match(searchResults[0].Name);
             if (season.Success && !ONES.Contains(season.Groups[1].Value))
             {
@@ -359,7 +361,7 @@ public partial class DoubanApi
         {
             seasonIndex = Convert.ToInt32(seasonNumber);
         }
-        else if (content.QuerySelector("#season option[selected]") is HtmlNode selected)
+        else if (content.QuerySelector("#seasonMatch option[selected]") is HtmlNode selected)
         {
             seasonIndex = Convert.ToInt32(selected.InnerText.Trim());
         }
@@ -368,7 +370,7 @@ public partial class DoubanApi
             seasonIndex = 1;
             if (REGEX_SEASON.IsMatch(name))
             {
-                seasonIndex = ConvertChineseNumberToNumber(REGEX_SEASON.Match(name).Groups[1].Value);
+                seasonIndex = ConvertChineseNumberToNumber(REGEX_SEASON.Match(name).Groups.GetValueOrDefault("season")?.Value ?? "");
             }
         }
         int.TryParse(info.GetValueOrDefault("集数", "0"), out var episodeCount);
@@ -473,6 +475,7 @@ public partial class DoubanApi
                 results.Add(result);
             }
         }
+        _log.LogDebug("{count} person(s) found for movie {sid}", results.Count, sid);
         return results;
 
 #if NET8_0_OR_GREATER
