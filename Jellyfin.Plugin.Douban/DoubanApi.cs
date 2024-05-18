@@ -21,10 +21,7 @@ public partial class DoubanApi
         public DateTime time;
     }
 
-    private static readonly string[] ONES = ["一", "1"];
-
     private static Regex REGEX_AUTOMATIC_SEASON_NAME => new(@"^ *(?:第 *\d+ *季|Season \d+|未知季|Season Unknown|Specials) *$");
-    private static Regex REGEX_SEASON => Helper.REGEX_SEASON;
     private static Regex REGEX_PERSONAGE_ID => new(@"/personage/(\d+)");
 
     private readonly HttpClient _httpClient;
@@ -99,12 +96,9 @@ public partial class DoubanApi
 
         var infoName = (string.IsNullOrEmpty(info.Name) || REGEX_AUTOMATIC_SEASON_NAME.IsMatch(info.Name)) ? "" : info.Name;
         var isMovie = info is MovieInfo;
-        // For series, if the name does not include a seasonMatch name, search for the first seasonMatch
-        // For seasons, if the index < 2, search for the first seasonMatch
-        // Otherwise, if the name includes "第一季", search for the first seasonMatch
-        var seasonMatch = REGEX_SEASON.Match(info.Name ?? "");
-        var season = Helper.ConvertChineseNumberToNumber(seasonMatch.Groups.GetValueOrDefault("season")?.Value ?? "");
-        var isFirstSeason = ((info is SeriesInfo && !seasonMatch.Success) || (info is SeasonInfo && (info.IndexNumber ?? 0) < 2) || season == 1) && !(seasonMatch.Success && season != 1);
+
+        var gussedSeason = Helper.GuessSeasonIndex(info);
+        var isFirstSeason = gussedSeason < 2 && (gussedSeason == 1 || (info is SeriesInfo && gussedSeason == 0) || (info is SeasonInfo && (info.IndexNumber ?? 0) < 2));
 
         if (searchResults.Count == 0)
         {
@@ -126,20 +120,21 @@ public partial class DoubanApi
                 names.Add(infoName);
                 names.Add(info.OriginalTitle);
 
-                if (info is SeasonInfo && info.IndexNumber > 1)
+                if (info is SeasonInfo && ((info.IndexNumber ?? 0) > 1 || gussedSeason > 1))
                 {
-                    int parentId = Helper.ParseDoubanId(info, true);
+                    var season = (info.IndexNumber ?? 0) > 1 ? (info.IndexNumber ?? 0) : gussedSeason;
+                    var parentId = Helper.ParseDoubanId(info, true);
                     if (parentId != 0)
                     {
                         var subject = await FetchMovie(parentId.ToString(), token);
                         if (!string.IsNullOrWhiteSpace(subject.Name))
                         {
-                            names.Add($"{REGEX_SEASON.Replace(subject.Name, "")} 第{info.IndexNumber}季");
+                            names.Add(Helper.ReplaceSeasonIndexWith(info.Name, season));
                         }
                     }
                     if (!string.IsNullOrWhiteSpace(infoName))
                     {
-                        names.Add($"{REGEX_SEASON.Replace(infoName, "")} 第{info.IndexNumber}季");
+                        names.Add(Helper.ReplaceSeasonIndexWith(infoName, season));
                     }
                 }
 
@@ -188,10 +183,10 @@ public partial class DoubanApi
         if (searchResults.Count > 0 && isFirstSeason)
         {
             // If the name of search result contains "第x季" but x != 1, search for the first seasonMatch again
-            var seasonMatch2 = REGEX_SEASON.Match(searchResults[0].Name);
-            if (seasonMatch2.Success && !ONES.Contains(seasonMatch2.Groups[1].Value))
+            var season = Helper.ParseSeasonIndex(searchResults[0].Name);
+            if (season > 1)
             {
-                searchResults = await SearchMovie(REGEX_SEASON.Replace(searchResults[0].Name, " 第1季"), isMovie, isFirstSeason, token);
+                searchResults = await SearchMovie(Helper.ReplaceSeasonIndexWith(searchResults[0].Name, 1), isMovie, isFirstSeason, token);
             }
         }
 

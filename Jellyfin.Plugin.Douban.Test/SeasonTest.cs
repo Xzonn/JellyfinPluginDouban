@@ -28,7 +28,6 @@ namespace Jellyfin.Plugin.Douban.Test
                 Path = Path.Combine(Path.GetTempPath(), "间谍过家家 第二季 (2023)"),
                 Year = 2023,
                 IsAutomated = true,
-                IndexNumber = 2,
             }, new System.Threading.CancellationToken());
             Assert.True(result.HasMetadata);
             Assert.Equal("36190888", result.Item.GetProviderId(Constants.ProviderId));
@@ -40,11 +39,19 @@ namespace Jellyfin.Plugin.Douban.Test
                 Path = Path.Combine(Path.GetTempPath(), "洛基 第一季"),
                 Year = 2023,
                 IsAutomated = true,
-                IndexNumber = 1,
             }, new System.Threading.CancellationToken());
             Assert.True(result.HasMetadata);
             Assert.Equal("30331432", result.Item.GetProviderId(Constants.ProviderId));
             Assert.Equal(1, result.Item.IndexNumber);
+
+            result = await _provider.GetMetadata(new SeasonInfo
+            {
+                Name = "斗破苍穹 年番2",
+                IsAutomated = true,
+            }, new System.Threading.CancellationToken());
+            Assert.True(result.HasMetadata);
+            Assert.Equal("36886931", result.Item.GetProviderId(Constants.ProviderId));
+            Assert.Equal(6, result.Item.IndexNumber);
         }
     }
 }

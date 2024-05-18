@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="CsvHelper" Version="32.0.3" />
     <PackageReference Include="MartinCostello.Logging.XUnit" Version="0.3.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.9.0" />
     <PackageReference Include="xunit" Version="2.8.0" />
@@ -18,6 +19,12 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Jellyfin.Plugin.Douban\Jellyfin.Plugin.Douban.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="data\season_index.csv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

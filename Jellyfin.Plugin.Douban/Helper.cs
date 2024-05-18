@@ -34,7 +34,8 @@ public static class Helper
     private static Regex REGEX_CELEBRITY => new(@"/celebrity/(\d+)/");
     private static Regex REGEX_DOUBANIO_HOST => new(@"https?://img\d+\.doubanio.com");
 
-    public static Regex REGEX_SEASON => new(@" *第(?<season>[一二三四五六七八九十百千万\d]+)[季期]|\bSeason (?<season>\d+)|[^\w'](?<season>\d{1,2})$");
+    public static Regex REGEX_SEASON => new(@" *第(?<season>[一二三四五六七八九十百千万\d]+)[季期部]| *\b(?:Season) (?<season>\d+)", RegexOptions.IgnoreCase);
+    public static Regex REGEX_SEASON_2 => new(@"(?<![a-z\d\.']|女神异闻录|Part )(?<season>\d{1,2})$");
 
     public static string? AnitomySharpParse(string name, ElementCategory category)
     {
@@ -75,14 +76,31 @@ public static class Helper
         return result;
     }
 
-    public static int ParseSeasonIndex(string name)
+    public static int GuessSeasonIndex(ItemLookupInfo info)
+    {
+        int index = ParseSeasonIndex(info.Name);
+        if (index == 0) { index = ParseSeasonIndex(info.OriginalTitle); }
+        if (index == 0) { index = ParseSeasonIndex(Path.GetFileName(info.Path)); }
+        if (index == 0) { int.TryParse(AnitomySharpParse(Path.GetFileName(info.Path), ElementCategory.ElementAnimeSeason), out index); }
+        if (index == 0) { index = ParseSeasonIndex(info.Name, REGEX_SEASON_2); }
+
+        return index;
+    }
+
+    public static int ParseSeasonIndex(string name, Regex? pattern = null)
     {
         if (string.IsNullOrWhiteSpace(name)) { return 0; }
 
-        var seasonMatch = REGEX_SEASON.Match(name ?? "");
+        var seasonMatch = (pattern ?? REGEX_SEASON).Match(name ?? "");
         var season = ConvertChineseNumberToNumber(seasonMatch.Groups.GetValueOrDefault("season")?.Value ?? "");
 
         return season;
+    }
+
+    public static string ReplaceSeasonIndexWith(string name, int index)
+    {
+        name = $"{REGEX_SEASON_2.Replace(REGEX_SEASON.Replace(name, ""), "")} 第{index}季";
+        return name;
     }
 
     public static int ParseDoubanId(IHasProviderIds info, bool ignoreSeasonIndex = false)
@@ -212,21 +230,25 @@ public static class Helper
         if (info.ContainsKey("集数") || info.ContainsKey("单集片长")) { type = "电视剧"; }
         var intro = string.Join("\n", (content?.QuerySelector("#link-report-intra span.all") ?? content?.QuerySelector("#link-report-intra span"))?.InnerText.Trim().Split("\n").Select(_ => _.Trim()) ?? []);
         var screenTime = info.GetValueOrDefault("上映日期", info.GetValueOrDefault("首播", "")).Split("/").Select(_ => REGEX_BRACKET.Replace(_.Trim(), "")).Where(_ => REGEX_DATE.IsMatch(_)).FirstOrDefault();
+
+        var otherNames = info.GetValueOrDefault("又名", "").Split("/").Select(_ => _.Trim());
         var seasonIndex = 0;
-        if (info.TryGetValue("季数", out string? seasonNumber))
-        {
-            seasonIndex = Convert.ToInt32(seasonNumber);
-        }
-        else if (content.QuerySelector("#seasonMatch option[selected]") is HtmlNode selected)
+        if (content.QuerySelector("#season option[selected]") is HtmlNode selected)
         {
             seasonIndex = Convert.ToInt32(selected.InnerText.Trim());
         }
+        else if (info.TryGetValue("季数", out var seasonNumber))
+        {
+            seasonIndex = Convert.ToInt32(seasonNumber);
+        }
         else if (type == "电视剧")
         {
-            seasonIndex = 1;
-            if (REGEX_SEASON.IsMatch(name))
+            seasonIndex = ParseSeasonIndex(name);
+            if (seasonIndex == 0) { seasonIndex = ParseSeasonIndex(originalName ?? ""); }
+            foreach (var otherName in otherNames)
             {
-                seasonIndex = Helper.ConvertChineseNumberToNumber(REGEX_SEASON.Match(name).Groups.GetValueOrDefault("season")?.Value ?? "");
+                if (seasonIndex != 0) { break; }
+                seasonIndex = ParseSeasonIndex(otherName);
             }
         }
         int.TryParse(info.GetValueOrDefault("集数", "0"), out var episodeCount);
