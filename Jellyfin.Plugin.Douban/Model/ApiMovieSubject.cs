@@ -3,7 +3,7 @@
 public class ApiMovieSubject
 {
     public string? Type { get; set; }
-    public string? Name { get; set; }
+    public string Name { get; set; } = "";
     public string? OriginalName { get; set; }
     public decimal Rating { get; set; }
     public string? PosterId { get; set; }

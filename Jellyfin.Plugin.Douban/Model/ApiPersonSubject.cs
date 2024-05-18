@@ -2,7 +2,7 @@
 
 public class ApiPersonSubject
 {
-    public string? Name { get; set; }
+    public string Name { get; set; } = "";
     public string? OriginalName { get; set; }
     public string? PosterUrl { get; set; }
     public string? CelebrityId { get; set; }
