@@ -1,5 +1,5 @@
 # Jellyfin 豆瓣元数据插件
-![设置项预览](assets/images/preview.png)
+![Logo](assets/images/logo.png)
 
 参考 [jellyfin-plugin-bangumi](https://github.com/kookxiang/jellyfin-plugin-bangumi) 和 [jellyfin-plugin-opendouban](https://github.com/caryyu/jellyfin-plugin-opendouban) 制作的豆瓣元数据插件，支持电影、电视剧元数据获取。
 
@@ -17,3 +17,5 @@
 ### 手动安装
 - 下载插件压缩包，将 dll 文件解压至 `<Jellyfin 数据目录>/Plugins/Douban`
 - 重启 Jellyfin
+
+![设置项预览](assets/images/preview.png)
