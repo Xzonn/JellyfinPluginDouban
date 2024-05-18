@@ -19,13 +19,13 @@ public class PersonProvider(DoubanApi api, ILogger<PersonProvider> logger) : IRe
         logger.LogDebug("PersonLookupInfo: {info:l}", JsonSerializer.Serialize(info, options: Constants.JsonSerializerOptions));
         var result = new MetadataResult<Person> { ResultLanguage = Constants.Language };
 
-        var pid = await api.TryParseDoubanPersonageId(info, token);
+        var pid = await Helper.ParseDoubanPersonageId(info, api, token);
         if (pid == 0)
         {
             var searchResults = (await GetSearchResults(info, token)).ToList();
             if (searchResults.Count > 0)
             {
-                pid = await api.TryParseDoubanPersonageId(searchResults[0], token);
+                pid = await Helper.ParseDoubanPersonageId(searchResults[0], api, token);
             }
         }
 
@@ -58,7 +58,7 @@ public class PersonProvider(DoubanApi api, ILogger<PersonProvider> logger) : IRe
         token.ThrowIfCancellationRequested();
         var searchResults = new List<ApiPersonSubject>();
 
-        var pid = await api.TryParseDoubanPersonageId(searchInfo, token);
+        var pid = await Helper.ParseDoubanPersonageId(searchInfo, api, token);
         if (pid != 0)
         {
             var subject = await api.FetchPersonByPersonageId(pid.ToString(), token);

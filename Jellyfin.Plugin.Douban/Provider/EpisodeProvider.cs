@@ -25,7 +25,7 @@ public class EpisodeProvider(DoubanApi api, ILogger<EpisodeProvider> logger) : I
 
         var index = 0;
         var fileName = Path.GetFileName(info.Path);
-        var indexString = AnitomySharpParser.Parse(fileName, ElementCategory.ElementEpisodeNumber);
+        var indexString = Helper.AnitomySharpParse(fileName, ElementCategory.ElementEpisodeNumber);
         if (!string.IsNullOrEmpty(indexString)) { index = int.Parse(indexString); }
         if (index == 0) { index = info.IndexNumber ?? 0; }
         if (index == 0 || index > movie.EpisodeCount) { return result; }

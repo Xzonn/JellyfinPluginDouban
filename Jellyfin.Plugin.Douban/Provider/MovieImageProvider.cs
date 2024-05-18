@@ -38,7 +38,7 @@ public class MovieImageProvider(DoubanApi api, ILogger<MovieImageProvider> logge
         token.ThrowIfCancellationRequested();
         var images = new List<RemoteImageInfo>();
 
-        var id = DoubanApi.TryParseDoubanId(item);
+        var id = Helper.ParseDoubanId(item);
         if (id == 0)
         {
             return images;
@@ -69,7 +69,7 @@ public class MovieImageProvider(DoubanApi api, ILogger<MovieImageProvider> logge
         }
         foreach (var _ in dict)
         {
-            (await api.FetchMovieImages(id.ToString(), _.Key, _.Value, token)).ForEach(__ => images.Add(__));
+            (await api.FetchMovieImages(id.ToString(), _.Key, _.Value, token)).ForEach(images.Add);
         }
 
         return images;
