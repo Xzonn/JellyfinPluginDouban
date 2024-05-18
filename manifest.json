@@ -46,6 +46,14 @@
         "sourceUrl": "https://xzonn.top/JellyfinPluginDouban/dist/Jellyfin.Plugin.Douban.2.0.2.0.zip",
         "timestamp": "2024-05-17T10:38:41Z",
         "version": "2.0.2.0"
+      },
+      {
+        "checksum": "85AD8CF5E8BCF3CD244D23CEA38C9822",
+        "changelog": "https://xzonn.top/posts/Jellyfin-Plugin-Douban.html#%E6%9B%B4%E6%96%B0%E6%97%A5%E5%BF%97",
+        "targetAbi": "10.8.0.0",
+        "sourceUrl": "https://xzonn.top/JellyfinPluginDouban/dist/Jellyfin.Plugin.Douban.1.1.0.0.zip",
+        "timestamp": "2024-05-18T11:11:43Z",
+        "version": "1.1.0.0"
       }
     ]
   }
