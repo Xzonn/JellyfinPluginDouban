@@ -1,4 +1,4 @@
-name: Build on push
+name: Publish
 
 on:
   push:
@@ -7,35 +7,39 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest
+    uses: ./.github/workflows/build.yml
+    with:
+      publish: true
+
+  upload:
+    needs: build
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Get latest tag
-        id: get-tag
-        run: |
-          $(git describe --tags) -Replace '^v', 'version=' >> $env:GITHUB_OUTPUT
       - uses: actions/checkout@v4
         with:
           ref: publisher
           path: publisher
+      - name: Get latest tag
+        id: get-tag
+        run: |
+          git fetch --tags
+          tag=$(git describe --tags)
+          echo "${tag/v/version=}" >> $GITHUB_OUTPUT
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Build and pack package
-        env:
-          XZ_VERSION: ${{ steps.get-tag.outputs.version }}
+      - uses: actions/download-artifact@v4
+        id: get-artifacts
+        with:
+          path: publisher/temp/
+      - name: Update manifest
         run: |
-          Move-Item -Path "Jellyfin.Plugin.Douban/Jellyfin.Plugin.Douban.csproj" -Destination "Jellyfin.Plugin.Douban/Jellyfin.Plugin.Douban.csproj.bak"
-          Get-Content -Path "Jellyfin.Plugin.Douban/Jellyfin.Plugin.Douban.csproj.bak" -Encoding UTF8 | ForEach-Object { $_ -Replace '<((?:Assembly|File)?Version)>[\d\.]+</\1>', "<`$1>$env:XZ_VERSION</`$1>" } | Out-File -FilePath "Jellyfin.Plugin.Douban/Jellyfin.Plugin.Douban.csproj" -Encoding UTF8
-          dotnet build "Jellyfin.Plugin.Douban/Jellyfin.Plugin.Douban.csproj" -c "Release" -o "./publisher"
-          Remove-Item -Path "Jellyfin.Plugin.Douban/Jellyfin.Plugin.Douban.csproj"
-          Move-Item -Path "Jellyfin.Plugin.Douban/Jellyfin.Plugin.Douban.csproj.bak" -Destination "Jellyfin.Plugin.Douban/Jellyfin.Plugin.Douban.csproj"
-          Compress-Archive -Path "publisher/Jellyfin.Plugin.Douban.dll" -DestinationPath "publisher/dist/Jellyfin.Plugin.Douban.$env:XZ_VERSION.0.zip" -Force
           python publisher/update_manifest.py
       - name: Push to GitHub
         run: |
-          Push-Location publisher
+          pushd publisher
           git add -A
           git -c user.name=GitHub -c user.email=noreply@github.com commit -m "${{ steps.get-tag.outputs.version }}"
           git push
-          Pop-Location
+          popd

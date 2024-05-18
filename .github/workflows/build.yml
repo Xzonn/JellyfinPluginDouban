@@ -1,0 +1,52 @@
+name: Build
+
+on:
+  push:
+    branches: 
+      - master
+    paths-ignore:
+      - '*.md'
+      - '**/.gitignore'
+      - 'assets/**/*'
+  pull_request:
+    branches:
+      - master
+    paths-ignore:
+      - '*.md'
+      - '**/.gitignore'
+      - 'images/**/*'
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      publish:
+        required: true
+        type: boolean
+        default: false
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        dotnet_version: [net6.0, net8.0]
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Build and pack package
+        env:
+          XZ_DOTNET_VERSION: ${{ matrix.dotnet_version }}
+          XZ_PUBLISH: ${{ inputs.publish }}
+          XZ_GITHUB_RUN: ${{ github.run_number }}
+        run: |
+          python build.py
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ matrix.dotnet_version }}
+          path: temp/*.zip
