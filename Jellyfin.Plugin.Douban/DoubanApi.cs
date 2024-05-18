@@ -446,6 +446,9 @@ public partial class DoubanApi
                 }
                 string[] roleText = _.QuerySelector(".role")?.InnerText.Trim().Split(" ") ?? [topType];
                 var type = roleText[0];
+                var convertedType = ConvertTypeString(type) ?? ConvertTypeString(topType);
+                if (convertedType is null) { continue; }
+
                 var role = "";
                 if (roleText.Contains("(饰"))
                 {
@@ -459,18 +462,17 @@ public partial class DoubanApi
                 {
                     Name = name,
                     ImageUrl = posterUrl,
-                    Type = ConvertTypeString(type) ?? ConvertTypeString(topType) ?? default,
+#if NET8_0_OR_GREATER
+                    Type = (PersonType)convertedType,
+#else
+                    Type = convertedType,
+#endif
                     Role = role,
                 };
                 result.SetProviderId(Constants.ProviderId, cid);
                 results.Add(result);
             }
         }
-#if NET8_0_OR_GREATER
-        results = results.Where(_ => _.Type != PersonType.Unknown).ToList();
-#else
-        results = results.Where(_ => !string.IsNullOrEmpty(_.Type)).ToList();
-#endif
         return results;
 
 #if NET8_0_OR_GREATER
