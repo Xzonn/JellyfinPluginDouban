@@ -41,10 +41,16 @@ public class PersonImageProvider(DoubanApi api, ILogger<PersonImageProvider> log
                 ThumbnailUrl = subject.PosterUrl,
                 Type = ImageType.Primary,
                 Url = subject.PosterUrl,
+                CommunityRating = -1,
+                RatingType = RatingType.Likes,
             };
             images.Add(image);
         }
         (await api.FetchPersonImages(pid.ToString(), token)).ForEach(images.Add);
+        if (images.FirstOrDefault()?.CommunityRating < 0)
+        {
+            images.FirstOrDefault()!.CommunityRating = (images.Where(_ => _ is not null).OrderByDescending(_ => _.CommunityRating).FirstOrDefault()?.CommunityRating ?? 0) + 1;
+        }
 
         return images;
     }

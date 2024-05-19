@@ -391,7 +391,7 @@ public static class Helper
         htmlDoc.LoadHtml(responseText);
 
         var title = htmlDoc.QuerySelector("title").InnerText.Trim();
-        var info = htmlDoc.QuerySelectorAll("#content .ep-info li").Select(_ => _.InnerText.Trim().Split(":", 2)).Where(_ => _.Length > 1).ToDictionary(_ => _[0], _ => string.Join(":\n", _[1..]).Trim()) ?? [];
+        var info = htmlDoc.QuerySelectorAll("#content .ep-info li").Select(_ => _.InnerText.Trim().Split(":", 2)).Where(_ => _.Length > 1).ToDictionary(_ => _[0], _ => _[1].Trim()) ?? [];
         var name = info!.GetValueOrDefault("本集中文名", "暂无，欢迎添加");
         var originalName = info!.GetValueOrDefault("本集原名", "暂无，欢迎添加");
         var screenTimeStr = info!.GetValueOrDefault("播放时间", "暂无，欢迎添加");
