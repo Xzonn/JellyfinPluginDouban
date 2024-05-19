@@ -15,4 +15,6 @@ public class PluginConfiguration : BasePluginConfiguration
     public bool FetchStagePhoto { get; set; } = Helper.DEFAULT_FETCH_STAGE_PHOTO;
 
     public bool FetchCelebrityImages { get; set; } = Helper.DEFAULT_FETCH_CELEBRITY_IMAGES;
+
+    public bool OptimizeForFirstSeason { get; set; } = Helper.DEFAULT_OPTIMIZE_FOR_FIRST_SEASON;
 }

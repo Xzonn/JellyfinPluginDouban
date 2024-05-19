@@ -25,6 +25,7 @@ public static class Helper
     public const bool DEFAULT_DISTINGUISH_USING_ASPECT_RATIO = true;
     public const bool DEFAULT_FETCH_STAGE_PHOTO = true;
     public const bool DEFAULT_FETCH_CELEBRITY_IMAGES = true;
+    public const bool DEFAULT_OPTIMIZE_FOR_FIRST_SEASON = true;
 
     private static Regex REGEX_SID => new(@"\s*sid:\s*(\d+)");
     private static Regex REGEX_IMAGE => new(@"/(p\d+)\.(?:webp|png|jpg|jpeg|gif)$");

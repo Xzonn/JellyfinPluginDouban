@@ -98,7 +98,7 @@ public partial class DoubanApi
         var isMovie = info is MovieInfo;
 
         var gussedSeason = Helper.GuessSeasonIndex(info);
-        var isFirstSeason = gussedSeason < 2 && (gussedSeason == 1 || (info is SeriesInfo && gussedSeason == 0) || (info is SeasonInfo && (info.IndexNumber ?? 0) < 2));
+        var isFirstSeason = Configuration.OptimizeForFirstSeason && gussedSeason < 2 && (gussedSeason == 1 || (info is SeriesInfo && gussedSeason == 0) || (info is SeasonInfo && (info.IndexNumber ?? 0) < 2));
 
         if (searchResults.Count == 0)
         {
