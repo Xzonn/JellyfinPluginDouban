@@ -46,6 +46,8 @@ public class EpisodeProvider(DoubanApi api, ILogger<EpisodeProvider> logger) : I
         result.QueriedById = true;
         result.HasMetadata = true;
 
+        logger.LogDebug("Metadata: {info:l}", Helper.ConvertMetadataToJson(result.Item));
+
         return result;
     }
 

@@ -45,7 +45,9 @@ public class SeriesProvider(DoubanApi api, ILogger<SeriesProvider> logger) : IRe
         result.QueriedById = true;
         result.HasMetadata = true;
 
-        (await api.FetchMovieCelebrities(subject.Sid!, token)).ForEach(_ => result.AddPerson(_));
+        (await api.FetchMovieCelebrities(subject.Sid!, token)).ForEach(result.AddPerson);
+
+        logger.LogDebug("Metadata: {info:l}", Helper.ConvertMetadataToJson(result.Item));
 
         return result;
     }

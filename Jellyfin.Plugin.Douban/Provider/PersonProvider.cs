@@ -50,6 +50,8 @@ public class PersonProvider(DoubanApi api, ILogger<PersonProvider> logger) : IRe
         result.QueriedById = true;
         result.HasMetadata = true;
 
+        logger.LogDebug("Metadata: {info:l}", Helper.ConvertMetadataToJson(result.Item));
+
         return result;
     }
 

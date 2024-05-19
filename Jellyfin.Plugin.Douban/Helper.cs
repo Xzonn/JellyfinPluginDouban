@@ -1,10 +1,11 @@
-using HtmlAgilityPack;
+﻿using HtmlAgilityPack;
 using Jellyfin.Plugin.Douban.Model;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Providers;
 using MediaBrowser.Model.Dto;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Providers;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Web;
 
@@ -484,5 +485,18 @@ public static class Helper
             ImdbId = info!.GetValueOrDefault("imdb编号", info!.GetValueOrDefault("IMDb编号", null)),
         };
         return result;
+    }
+
+    public static string ConvertMetadataToJson(BaseItem item)
+    {
+        var dict = new Dictionary<string, object?>
+        {
+            ["name"] = item.Name,
+            ["originalTitle"] = item.OriginalTitle,
+            ["communityRating"] = item.CommunityRating,
+            ["providerIds"] = item.ProviderIds,
+        };
+
+        return JsonSerializer.Serialize(dict, options: Constants.JsonSerializerOptions);
     }
 }

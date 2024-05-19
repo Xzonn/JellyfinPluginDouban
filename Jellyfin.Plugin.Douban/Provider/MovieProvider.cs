@@ -39,7 +39,9 @@ public class MovieProvider(DoubanApi api, ILogger<MovieProvider> logger) : IRemo
         result.QueriedById = true;
         result.HasMetadata = true;
 
-        (await api.FetchMovieCelebrities(subject.Sid!, token)).ForEach(_ => result.AddPerson(_));
+        (await api.FetchMovieCelebrities(subject.Sid!, token)).ForEach(result.AddPerson);
+
+        logger.LogDebug("Metadata: {info:l}", Helper.ConvertMetadataToJson(result.Item));
 
         return result;
     }
