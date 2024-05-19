@@ -228,7 +228,7 @@ public static class Helper
         var year = Convert.ToInt32(content?.QuerySelector("h1 .year")?.InnerText.Trim().TrimStart('(').TrimEnd(')'));
         var rating = content?.QuerySelector("#interest_sectl .rating_num")?.InnerText.Trim();
         rating = string.IsNullOrEmpty(rating) ? "0.0" : rating;
-        var info = content?.QuerySelector("#info")?.InnerText.Trim().Split("\n").Select(_ => _.Trim().Split(":", 2)).Where(_ => _.Length > 1).ToDictionary(_ => _[0], _ => _[1].Trim()) ?? [];
+        var info = content?.QuerySelector("#info")?.InnerText.Trim().Split("\n").Select(_ => _.Trim().Split(":", 2)).Where(_ => _.Length > 1).ToDictionary(_ => _[0], _ => HttpUtility.HtmlDecode(_[1].Trim())) ?? [];
         var type = "电影";
         if (info.ContainsKey("集数") || info.ContainsKey("单集片长")) { type = "电视剧"; }
         var intro = string.Join("\n", (content?.QuerySelector("#link-report-intra span.all") ?? content?.QuerySelector("#link-report-intra span"))?.InnerText.Trim().Split("\n").Select(_ => _.Trim()) ?? []);
@@ -394,7 +394,7 @@ public static class Helper
         htmlDoc.LoadHtml(responseText);
 
         var title = htmlDoc.QuerySelector("title").InnerText.Trim();
-        var info = htmlDoc.QuerySelectorAll("#content .ep-info li").Select(_ => _.InnerText.Trim().Split(":", 2)).Where(_ => _.Length > 1).ToDictionary(_ => _[0], _ => _[1].Trim()) ?? [];
+        var info = htmlDoc.QuerySelectorAll("#content .ep-info li").Select(_ => _.InnerText.Trim().Split(":", 2)).Where(_ => _.Length > 1).ToDictionary(_ => _[0], _ => HttpUtility.HtmlDecode(_[1].Trim())) ?? [];
         var name = info!.GetValueOrDefault("本集中文名", "暂无，欢迎添加");
         var originalName = info!.GetValueOrDefault("本集原名", "暂无，欢迎添加");
         var screenTimeStr = info!.GetValueOrDefault("播放时间", "暂无，欢迎添加");
@@ -458,7 +458,7 @@ public static class Helper
         var originalName = content.QuerySelector("h1").InnerText.Replace(name, "").Trim();
         var infoList = content.QuerySelector(".info ul");
         infoList ??= content.QuerySelector(".subject-target ul.subject-property");
-        var info = infoList.QuerySelectorAll("li").Select(_ => _.InnerText.Trim().Split(":", 2)).Where(_ => _.Length > 1).ToDictionary(_ => _[0], _ => _[1].Trim());
+        var info = infoList.QuerySelectorAll("li").Select(_ => _.InnerText.Trim().Split(":", 2)).Where(_ => _.Length > 1).ToDictionary(_ => _[0], _ => HttpUtility.HtmlDecode(_[1].Trim())) ?? [];
         var introElement = content.QuerySelector("#intro .bd .all");
         introElement ??= content.QuerySelector("#intro .bd");
         introElement ??= content.QuerySelector(".desc .content .content");
