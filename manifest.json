@@ -10,7 +10,7 @@
     "versions": [
       {
         "checksum": "DDE6BD69F0CCA6A555163DA49071BC1C",
-        "changelog": "- 优化了对含有多季的影视的搜索。",
+        "changelog": "- 优化了对含有多季的影视的搜索。\n\n**注意**：Jellyfin 10.8.x 版本和 10.9.x 版本的插件互相不兼容。对于 Jellyfin 10.8.13 版本，请使用本插件的 1.x 版本；对于 Jellyfin 10.9.0 及以上版本，请使用本插件的 2.x 版本。不支持 10.8.12 及以下版本。",
         "targetAbi": "10.8.0.0",
         "sourceUrl": "https://xzonn.top/JellyfinPluginDouban/dist/Jellyfin.Plugin.Douban.1.0.9.0.zip",
         "timestamp": "2024-05-16T13:18:37Z",
@@ -42,7 +42,7 @@
       },
       {
         "checksum": "4F702620B8D329928AF8450017A9AB43",
-        "changelog": "https://xzonn.top/posts/Jellyfin-Plugin-Douban.html#%E6%9B%B4%E6%96%B0%E6%97%A5%E5%BF%97",
+        "changelog": "- 增加了搜索人物图片的支持。\n- 部分细节修正。",
         "targetAbi": "10.8.0.0",
         "sourceUrl": "https://xzonn.top/JellyfinPluginDouban/dist/Jellyfin.Plugin.Douban.1.1.1.0.zip",
         "timestamp": "2024-05-19T04:34:00Z",
@@ -50,10 +50,10 @@
       },
       {
         "checksum": "11A0DE41BF0740E6D6C5B400D3DDDB7E",
-        "changelog": "https://xzonn.top/posts/Jellyfin-Plugin-Douban.html#%E6%9B%B4%E6%96%B0%E6%97%A5%E5%BF%97",
+        "changelog": "- 增加了搜索人物图片的支持。\n- 部分细节修正。",
         "targetAbi": "10.9.0.0",
         "sourceUrl": "https://xzonn.top/JellyfinPluginDouban/dist/Jellyfin.Plugin.Douban.2.1.1.0.zip",
-        "timestamp": "2024-05-19T04:34:00Z",
+        "timestamp": "2024-05-19T04:34:10Z",
         "version": "2.1.1.0"
       }
     ]
