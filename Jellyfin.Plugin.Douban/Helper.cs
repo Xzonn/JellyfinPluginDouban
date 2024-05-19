@@ -1,4 +1,4 @@
-﻿using HtmlAgilityPack;
+using HtmlAgilityPack;
 using Jellyfin.Plugin.Douban.Model;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Providers;
@@ -251,6 +251,7 @@ public static class Helper
                 if (seasonIndex != 0) { break; }
                 seasonIndex = ParseSeasonIndex(otherName);
             }
+            if (seasonIndex == 0) { seasonIndex = 1; }
         }
         int.TryParse(info.GetValueOrDefault("集数", "0"), out var episodeCount);
 
@@ -385,7 +386,7 @@ public static class Helper
         return results;
     }
 
-    public static ApiEpisodeSubject ParseMovieEpisode(string responseText)
+    public static ApiEpisodeSubject ParseMovieEpisode(string responseText, int index)
     {
         var htmlDoc = new HtmlDocument();
         htmlDoc.LoadHtml(responseText);
@@ -401,7 +402,7 @@ public static class Helper
 
         var result = new ApiEpisodeSubject()
         {
-            Name = name == "暂无，欢迎添加" ? "" : name,
+            Name = name == "暂无，欢迎添加" ? $"第 {index} 集" : name,
             OriginalName = originalName == "暂无，欢迎添加" ? null : originalName,
             ScreenTime = screenTime == DateTime.MinValue ? null : screenTime,
             Intro = info!.GetValueOrDefault("剧情简介", "暂无，欢迎添加") == "暂无，欢迎添加" ? null : intro,

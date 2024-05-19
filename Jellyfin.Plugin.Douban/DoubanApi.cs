@@ -21,7 +21,7 @@ public partial class DoubanApi
         public DateTime time;
     }
 
-    private static Regex REGEX_AUTOMATIC_SEASON_NAME => new(@"^ *(?:第 *\d+ *季|Season \d+|未知季|Season Unknown|Specials) *$");
+    private static Regex REGEX_AUTOMATIC_SEASON_NAME => new(@"^(?: *(?:第 *\d+ *季|Season \d+|未知季|Season Unknown|Specials) *)+$");
     private static Regex REGEX_PERSONAGE_ID => new(@"/personage/(\d+)");
 
     private readonly HttpClient _httpClient;
@@ -129,7 +129,7 @@ public partial class DoubanApi
                         var subject = await FetchMovie(parentId.ToString(), token);
                         if (!string.IsNullOrWhiteSpace(subject.Name))
                         {
-                            names.Add(Helper.ReplaceSeasonIndexWith(info.Name, season));
+                            names.Add(Helper.ReplaceSeasonIndexWith(subject.Name, season));
                         }
                     }
                     if (!string.IsNullOrWhiteSpace(infoName))
@@ -274,7 +274,7 @@ public partial class DoubanApi
         string? responseText = await FetchUrl(url, token);
         if (string.IsNullOrEmpty(responseText)) { return new ApiEpisodeSubject(); }
 
-        var result = Helper.ParseMovieEpisode(responseText);
+        var result = Helper.ParseMovieEpisode(responseText, index);
         _log.LogDebug("Episode {sid:l}/{index} is: {title}", sid, index, result.Name);
         return result;
     }
