@@ -262,7 +262,8 @@ public partial class DoubanApi
         var htmlDoc = new HtmlDocument();
         htmlDoc.LoadHtml(responseText);
 
-        var results = Helper.ParseMovieImages(responseText, imageType, Configuration.DistinguishUsingAspectRatio, Configuration.CdnServer);
+        var results = Helper.ParseImages(responseText, imageType, Configuration.DistinguishUsingAspectRatio, Configuration.CdnServer);
+        _log.LogDebug("{count} image(s) found for movie {sid}", results.Count, sid);
         return results;
     }
 
@@ -319,9 +320,23 @@ public partial class DoubanApi
         string? responseText = await FetchUrl(url, token);
         if (string.IsNullOrEmpty(responseText)) { return new ApiPersonSubject(); }
 
-        var result = Helper.ParsePerson(responseText, pid);
+        var result = Helper.ParsePerson(responseText, pid, Configuration.CdnServer);
         _log.LogDebug("PersonageId {pid} is: {name}", pid, result.Name);
         return result;
+    }
+
+    public async Task<List<RemoteImageInfo>> FetchPersonImages(string pid, CancellationToken token = default)
+    {
+        _log.LogDebug("Fetching images for person: {pid}", pid);
+        string url = $"https://www.douban.com/personage/{pid}/photos/";
+        string? responseText = await FetchUrl(url, token);
+        if (string.IsNullOrEmpty(responseText)) { return []; }
+        var htmlDoc = new HtmlDocument();
+        htmlDoc.LoadHtml(responseText);
+
+        var results = Helper.ParseImages(responseText, ImageType.Primary, false, Configuration.CdnServer);
+        _log.LogDebug("{count} image(s) found for person {pid}", results.Count, pid);
+        return results;
     }
 
     private async Task<string?> FetchUrl(string url, CancellationToken token = default)

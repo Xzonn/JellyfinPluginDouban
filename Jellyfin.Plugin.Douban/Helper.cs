@@ -2,6 +2,7 @@
 using Jellyfin.Plugin.Douban.Model;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Providers;
+using MediaBrowser.Model.Dto;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Providers;
 using System.Text.RegularExpressions;
@@ -33,9 +34,9 @@ public static class Helper
     private static Regex REGEX_DATE => new(@"\d{4}-\d\d-\d\d");
     private static Regex REGEX_CELEBRITY => new(@"/celebrity/(\d+)/");
     private static Regex REGEX_DOUBANIO_HOST => new(@"https?://img\d+\.doubanio.com");
-
-    public static Regex REGEX_SEASON => new(@" *第(?<season>[一二三四五六七八九十百千万\d]+)[季期部]| *\b(?:Season) (?<season>\d+)", RegexOptions.IgnoreCase);
-    public static Regex REGEX_SEASON_2 => new(@"(?<![a-z\d\.']|女神异闻录|Part )(?<season>\d{1,2})$");
+    private static Regex REGEX_SEASON => new(@" *第(?<season>[一二三四五六七八九十百千万\d]+)[季期部]| *\b(?:Season) (?<season>\d+)", RegexOptions.IgnoreCase);
+    private static Regex REGEX_SEASON_2 => new(@"(?<![a-z\d\.']|女神异闻录|Part )(?<season>\d{1,2})$");
+    private static Regex REGEX_IMAGE_VOTE => new(@"(\d+)回应");
 
     public static string? AnitomySharpParse(string name, ElementCategory category)
     {
@@ -354,7 +355,9 @@ public static class Helper
         }
     }
 
-    public static List<RemoteImageInfo> ParseMovieImages(string responseText, ImageType imageType = ImageType.Primary, bool distinguishUsingAspectRatio = DEFAULT_DISTINGUISH_USING_ASPECT_RATIO, string cdnServer = DEFAULT_CDN_SERVER)
+    public static List<RemoteImageInfo> ParseImages(string responseText, string cdnServer) => ParseImages(responseText, ImageType.Primary, DEFAULT_DISTINGUISH_USING_ASPECT_RATIO, cdnServer);
+
+    public static List<RemoteImageInfo> ParseImages(string responseText, ImageType imageType = ImageType.Primary, bool distinguishUsingAspectRatio = DEFAULT_DISTINGUISH_USING_ASPECT_RATIO, string cdnServer = DEFAULT_CDN_SERVER)
     {
         var htmlDoc = new HtmlDocument();
         htmlDoc.LoadHtml(responseText);
@@ -362,9 +365,10 @@ public static class Helper
         var results = htmlDoc.QuerySelectorAll(".article ul li").Select(_ =>
         {
             var posterId = REGEX_IMAGE.Match(_.QuerySelector("img").Attributes["src"].Value).Groups[1].Value;
-            var size = _.QuerySelector(".prop")?.InnerText.Trim().Split("x") ?? ["0", "0"];
+            var size = (_.QuerySelector(".prop") ?? _.QuerySelector(".size"))?.InnerText.Trim().Split("x") ?? ["0", "0"];
             var width = Convert.ToInt32(size[0]);
             var height = Convert.ToInt32(size[1]);
+            int.TryParse(REGEX_IMAGE_VOTE.Match(_.QuerySelector(".name a")?.InnerText ?? "").Groups[1].Value, out var vote);
             return new RemoteImageInfo()
             {
                 ProviderName = Constants.PluginName,
@@ -374,6 +378,8 @@ public static class Helper
                 Url = $"{cdnServer}/view/photo/l/public/{posterId}.jpg",
                 Width = width,
                 Height = height,
+                CommunityRating = vote == 0 ? null : vote,
+                RatingType = RatingType.Likes,
             };
         }).ToList();
         return results;

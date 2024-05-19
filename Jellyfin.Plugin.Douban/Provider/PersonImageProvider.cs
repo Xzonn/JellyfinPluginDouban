@@ -1,5 +1,6 @@
 ﻿using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Providers;
+using MediaBrowser.Model.Dto;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Providers;
 using Microsoft.Extensions.Logging;
@@ -43,6 +44,7 @@ public class PersonImageProvider(DoubanApi api, ILogger<PersonImageProvider> log
             };
             images.Add(image);
         }
+        (await api.FetchPersonImages(pid.ToString(), token)).ForEach(images.Add);
 
         return images;
     }
