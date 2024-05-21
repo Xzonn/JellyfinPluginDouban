@@ -425,9 +425,9 @@ public static class Helper
         }
     }
 
-    public static List<RemoteImageInfo> ParseImages(string responseText, string cdnServer) => ParseImages(responseText, ImageType.Primary, DEFAULT_DISTINGUISH_USING_ASPECT_RATIO, cdnServer);
+    public static List<RemoteImageInfo> ParseImages(string responseText, string cdnServer, ImageSortingMethod method = ImageSortingMethod.Default) => ParseImages(responseText, ImageType.Primary, DEFAULT_DISTINGUISH_USING_ASPECT_RATIO, cdnServer, method);
 
-    public static List<RemoteImageInfo> ParseImages(string responseText, ImageType imageType = ImageType.Primary, bool distinguishUsingAspectRatio = DEFAULT_DISTINGUISH_USING_ASPECT_RATIO, string cdnServer = DEFAULT_CDN_SERVER)
+    public static List<RemoteImageInfo> ParseImages(string responseText, ImageType imageType = ImageType.Primary, bool distinguishUsingAspectRatio = DEFAULT_DISTINGUISH_USING_ASPECT_RATIO, string cdnServer = DEFAULT_CDN_SERVER, ImageSortingMethod method = ImageSortingMethod.Default)
     {
         var htmlDoc = new HtmlDocument();
         htmlDoc.LoadHtml(responseText);
@@ -438,7 +438,17 @@ public static class Helper
             var size = (_.QuerySelector(".prop") ?? _.QuerySelector(".size"))?.InnerText.Trim().Split("x") ?? ["0", "0"];
             var width = Convert.ToInt32(size[0]);
             var height = Convert.ToInt32(size[1]);
-            int.TryParse(REGEX_IMAGE_VOTE.Match(_.QuerySelector(".name a")?.InnerText ?? "").Groups[1].Value, out var vote);
+
+            int rating = 0;
+            switch (method)
+            {
+                case ImageSortingMethod.Comment:
+                    int.TryParse(REGEX_IMAGE_VOTE.Match(_.QuerySelector(".name a")?.InnerText ?? "").Groups[1].Value, out rating);
+                    break;
+                case ImageSortingMethod.Size:
+                    rating = width * height;
+                    break;
+            }
             return new RemoteImageInfo()
             {
                 ProviderName = Constants.PluginName,
@@ -448,7 +458,7 @@ public static class Helper
                 Url = $"{cdnServer}/view/photo/l/public/{posterId}.jpg",
                 Width = width,
                 Height = height,
-                CommunityRating = vote == 0 ? null : vote,
+                CommunityRating = rating == 0 ? null : rating,
                 RatingType = RatingType.Likes,
             };
         }).ToList();

@@ -1,4 +1,5 @@
 ﻿using Jellyfin.Plugin.Douban.Configuration;
+using Jellyfin.Plugin.Douban.Model;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
@@ -56,8 +57,6 @@ public class MovieImageProvider(DoubanApi api, ILogger<MovieImageProvider> logge
                 ThumbnailUrl = $"{Configuration.CdnServer}/view/photo/s/public/{subject.PosterId}.jpg",
                 Type = ImageType.Primary,
                 Url = $"{Configuration.CdnServer}/view/photo/l/public/{subject.PosterId}.jpg",
-                CommunityRating = -1,
-                RatingType = RatingType.Likes,
             };
             images.Add(image);
         }
@@ -72,11 +71,7 @@ public class MovieImageProvider(DoubanApi api, ILogger<MovieImageProvider> logge
         }
         foreach (var _ in dict)
         {
-            (await api.FetchMovieImages(id.ToString(), _.Key, _.Value, token)).ForEach(images.Add);
-        }
-        if (images.FirstOrDefault()?.CommunityRating < 0)
-        {
-            images.FirstOrDefault()!.CommunityRating = (images.Where(_ => _ is not null).OrderByDescending(_ => _.CommunityRating).FirstOrDefault()?.CommunityRating ?? 0) + 1;
+            (await api.FetchMovieImages(id.ToString(), _.Key, _.Value, Configuration.ImageSortingMethod, token)).ForEach(images.Add);
         }
 
         return images;

@@ -270,16 +270,23 @@ public partial class DoubanApi
         return results;
     }
 
-    public async Task<List<RemoteImageInfo>> FetchMovieImages(string sid, string type = "R", ImageType imageType = ImageType.Primary, CancellationToken token = default)
+    public async Task<List<RemoteImageInfo>> FetchMovieImages(string sid, string type = "R", ImageType imageType = ImageType.Primary, ImageSortingMethod method = ImageSortingMethod.Default, CancellationToken token = default)
     {
         _log.LogDebug("Fetching images for movie: {sid}, type: {type}", sid, type);
-        string url = $"https://movie.douban.com/subject/{sid}/photos?type={type}";
+        string query = method switch
+        {
+            ImageSortingMethod.Comment => "&start=0&sortby=comment&size=a&subtype=a",
+            ImageSortingMethod.Time => "&start=0&sortby=time&size=a&subtype=a",
+            ImageSortingMethod.Size => "&start=0&sortby=size&size=a&subtype=a",
+            _ => "",
+        };
+        string url = $"https://movie.douban.com/subject/{sid}/photos?type={type}{query}";
         string? responseText = await FetchUrl(url, token);
         if (string.IsNullOrEmpty(responseText)) { return []; }
         var htmlDoc = new HtmlDocument();
         htmlDoc.LoadHtml(responseText);
 
-        var results = Helper.ParseImages(responseText, imageType, Configuration.DistinguishUsingAspectRatio, Configuration.CdnServer);
+        var results = Helper.ParseImages(responseText, imageType, Configuration.DistinguishUsingAspectRatio, Configuration.CdnServer, method);
         _log.LogDebug("{count} image(s) found for movie {sid}", results.Count, sid);
         return results;
     }
@@ -342,16 +349,22 @@ public partial class DoubanApi
         return result;
     }
 
-    public async Task<List<RemoteImageInfo>> FetchPersonImages(string pid, CancellationToken token = default)
+    public async Task<List<RemoteImageInfo>> FetchPersonImages(string pid, ImageSortingMethod method = ImageSortingMethod.Default, CancellationToken token = default)
     {
         _log.LogDebug("Fetching images for person: {pid}", pid);
-        string url = $"https://www.douban.com/personage/{pid}/photos/";
+        string query = method switch
+        {
+            ImageSortingMethod.Comment => "?start=0&sortby=comment&size=a&subtype=a",
+            ImageSortingMethod.Time => "?start=0&sortby=time&size=a&subtype=a",
+            _ => "",
+        };
+        string url = $"https://www.douban.com/personage/{pid}/photos/{query}";
         string? responseText = await FetchUrl(url, token);
         if (string.IsNullOrEmpty(responseText)) { return []; }
         var htmlDoc = new HtmlDocument();
         htmlDoc.LoadHtml(responseText);
 
-        var results = Helper.ParseImages(responseText, ImageType.Primary, false, Configuration.CdnServer);
+        var results = Helper.ParseImages(responseText, ImageType.Primary, false, Configuration.CdnServer, method);
         _log.LogDebug("{count} image(s) found for person {pid}", results.Count, pid);
         return results;
     }

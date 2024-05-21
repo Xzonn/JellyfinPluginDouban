@@ -1,4 +1,5 @@
-﻿using MediaBrowser.Model.Plugins;
+﻿using Jellyfin.Plugin.Douban.Model;
+using MediaBrowser.Model.Plugins;
 
 namespace Jellyfin.Plugin.Douban.Configuration;
 
@@ -9,6 +10,8 @@ public class PluginConfiguration : BasePluginConfiguration
     public string DoubanCookie { get; set; } = string.Empty;
 
     public int RequestTimeSpan { get; set; } = 2000;
+
+    public ImageSortingMethod ImageSortingMethod { get; set; } = ImageSortingMethod.Default;
 
     public bool DistinguishUsingAspectRatio { get; set; } = Helper.DEFAULT_DISTINGUISH_USING_ASPECT_RATIO;
 

@@ -17,9 +17,9 @@
                             <a href="https://xzonn.top/posts/Jellyfin-Plugin-Douban.html">关于本插件</a>
                         </div>
                         <div class="inputContainer">
-                            <label class="inputeLabel inputLabelUnfocused" for="CdnServer">豆瓣图片服务器</label>
+                            <label class="inputLabel inputLabelUnfocused" for="CdnServer">豆瓣图片服务器</label>
                             <input id="CdnServer" name="CdnServer" type="text" is="emby-input" />
-                            <div class="fieldDescription">豆瓣图片的服务器。<br />若要使用本地反向代理，请填写：<code class="emby-select-withcolor"><i>（服务器地址）</i>/Plugins/Douban/Image?url=</code>。<br />例如：<code class="emby-select-withcolor">http://localhost:8096/Plugins/Douban/Image?url=</code>（注意最后有一个等号 <code>=</code>）。</div>
+                            <div class="fieldDescription">豆瓣图片的服务器。<br />若要使用本插件自带的反向代理，请填写：<code class="emby-select-withcolor"><i>（服务器地址）</i>/Plugins/Douban/Image?url=</code>。<br />例如：<code class="emby-select-withcolor">http://localhost:8096/Plugins/Douban/Image?url=</code>（注意最后有一个等号 <code>=</code>）。</div>
                             <div>
                                 <button id="CdnServerTest" is="emby-button" class="raised emby-button">
                                     <span>测试服务器</span>
@@ -28,14 +28,24 @@
                             <div class="fieldDescription">如果点击按钮后出现一张图片，说明配置正确。</div>
                         </div>
                         <div class="inputContainer">
-                            <label class="inputeLabel inputLabelUnfocused" for="DoubanCookie">Cookie</label>
+                            <label class="inputLabel inputLabelUnfocused" for="DoubanCookie">Cookie</label>
                             <input id="DoubanCookie" name="DoubanCookie" type="text" is="emby-input" />
                             <div class="fieldDescription">豆瓣登录状态的 Cookie。</div>
                         </div>
                         <div class="inputContainer">
-                            <label class="inputeLabel inputLabelUnfocused" for="RequestTimeSpan">请求时间间隔</label>
+                            <label class="inputLabel inputLabelUnfocused" for="RequestTimeSpan">请求时间间隔</label>
                             <input id="RequestTimeSpan" name="RequestTimeSpan" type="number" is="emby-input" />
                             <div class="fieldDescription">每两次请求之间的时间间隔（毫秒），建议在需要搜索大量数据时将此数值提高到 5000 及以上。</div>
+                        </div>
+                        <div class="inputContainer">
+                            <label class="inputLabel inputLabelUnfocused" for="ImageSortingMethod">图片排序方式</label>
+                            <select class="emby-select-withcolor emby-select" id="ImageSortingMethod" name="ImageSortingMethod" is="emby-select">
+                                <option value="Default">默认</option>
+                                <option value="Comment">按回复</option>
+                                <option value="Time">按时间</option>
+                                <option value="Size">按尺寸</option>
+                            </select>
+                            <div class="fieldDescription">图片的排序方式。影响默认获取的海报和背景图。</div>
                         </div>
                         <div class="checkboxContainer checkboxContainer-withDescription">
                             <label class="emby-checkbox-label">
@@ -94,6 +104,8 @@
                             if (!element) return;
                             if (element.type === "checkbox") {
                                 element.checked = config[configKey];
+                            } else if (element.tagName.toLowerCase() === "select") {
+                                Array.from(element.options).filter(_ => _.value == config[configKey])[0].selected = true;
                             } else {
                                 element.value = config[configKey];
                             }
@@ -111,6 +123,8 @@
                             if (!element) return;
                             if (element.type === "checkbox") {
                                 config[configKey] = element.checked;
+                            } else if (element.tagName.toLowerCase() === "select") {
+                                config[configKey] = element.options[element.selectedIndex].value;
                             } else {
                                 config[configKey] = element.value;
                             }

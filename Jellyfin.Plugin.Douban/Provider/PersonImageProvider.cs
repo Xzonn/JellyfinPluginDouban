@@ -1,4 +1,6 @@
-﻿using MediaBrowser.Controller.Entities;
+﻿using Jellyfin.Plugin.Douban.Configuration;
+using Jellyfin.Plugin.Douban.Model;
+using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Providers;
 using MediaBrowser.Model.Dto;
 using MediaBrowser.Model.Entities;
@@ -9,6 +11,15 @@ namespace Jellyfin.Plugin.Douban.Provider;
 
 public class PersonImageProvider(DoubanApi api, ILogger<PersonImageProvider> logger) : IRemoteImageProvider, IHasOrder
 {
+    private static PluginConfiguration Configuration
+    {
+        get
+        {
+            if (Plugin.Instance != null) { return Plugin.Instance.Configuration; }
+            return new PluginConfiguration();
+        }
+    }
+
     public int Order => 0;
     public string Name => Constants.ProviderName;
 
@@ -41,16 +52,10 @@ public class PersonImageProvider(DoubanApi api, ILogger<PersonImageProvider> log
                 ThumbnailUrl = subject.PosterUrl,
                 Type = ImageType.Primary,
                 Url = subject.PosterUrl,
-                CommunityRating = -1,
-                RatingType = RatingType.Likes,
             };
             images.Add(image);
         }
-        (await api.FetchPersonImages(pid.ToString(), token)).ForEach(images.Add);
-        if (images.FirstOrDefault()?.CommunityRating < 0)
-        {
-            images.FirstOrDefault()!.CommunityRating = (images.Where(_ => _ is not null).OrderByDescending(_ => _.CommunityRating).FirstOrDefault()?.CommunityRating ?? 0) + 1;
-        }
+        (await api.FetchPersonImages(pid.ToString(), Configuration.ImageSortingMethod, token)).ForEach(images.Add);
 
         return images;
     }
