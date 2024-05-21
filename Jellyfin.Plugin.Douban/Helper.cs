@@ -1,4 +1,4 @@
-using HtmlAgilityPack;
+﻿using HtmlAgilityPack;
 using Jellyfin.Plugin.Douban.Model;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Providers;
@@ -39,6 +39,7 @@ public static class Helper
     private static Regex REGEX_SEASON => new(@" *第(?<season>[一二三四五六七八九十百千万\d]+)[季期部]| *\b(?:Season +|S0*)(?<season>\d+)", RegexOptions.IgnoreCase);
     private static Regex REGEX_SEASON_2 => new(@"(?<![A-Za-z\d\.']|女神异闻录|Part +)(?<season>[0-2]?\d)$", RegexOptions.IgnoreCase);
     private static Regex REGEX_IMAGE_VOTE => new(@"(\d+)回应");
+    private static Regex REGEX_DOUBAN_ATTRIBUTE => new(@"\[(?:douban|doubanid) *[-= ] *(\d+)\]");
 
     public static string? AnitomySharpParse(string name, ElementCategory category)
     {
@@ -109,25 +110,25 @@ public static class Helper
     public static int ParseDoubanId(IHasProviderIds info, bool ignoreSeasonIndex = false)
     {
         int id = 0;
-        if (info is EpisodeInfo episodeInfo)
+        if (info is EpisodeInfo episode)
         {
 #if NET8_0_OR_GREATER
-            int.TryParse(episodeInfo.SeasonProviderIds.GetValueOrDefault(Constants.ProviderId), out id);
-            if (id == 0) { int.TryParse(episodeInfo.SeasonProviderIds.GetValueOrDefault(Constants.ProviderId_Old), out id); }
-            if (id == 0) { int.TryParse(episodeInfo.SeasonProviderIds.GetValueOrDefault(Constants.ProviderId_OpenDouban), out id); }
+            int.TryParse(episode.SeasonProviderIds.GetValueOrDefault(Constants.ProviderId), out id);
+            if (id == 0) { int.TryParse(episode.SeasonProviderIds.GetValueOrDefault(Constants.ProviderId_Old), out id); }
+            if (id == 0) { int.TryParse(episode.SeasonProviderIds.GetValueOrDefault(Constants.ProviderId_OpenDouban), out id); }
 #endif
 
             if (id == 0)
             {
-                int.TryParse(episodeInfo.SeriesProviderIds.GetValueOrDefault(Constants.ProviderId), out id);
-                if (id == 0) { int.TryParse(episodeInfo.SeriesProviderIds.GetValueOrDefault(Constants.ProviderId_Old), out id); }
-                if (id == 0) { int.TryParse(episodeInfo.SeriesProviderIds.GetValueOrDefault(Constants.ProviderId_OpenDouban), out id); }
+                int.TryParse(episode.SeriesProviderIds.GetValueOrDefault(Constants.ProviderId), out id);
+                if (id == 0) { int.TryParse(episode.SeriesProviderIds.GetValueOrDefault(Constants.ProviderId_Old), out id); }
+                if (id == 0) { int.TryParse(episode.SeriesProviderIds.GetValueOrDefault(Constants.ProviderId_OpenDouban), out id); }
             }
 
             if (id == 0)
             {
-                var episodeId = episodeInfo.GetProviderId(Constants.ProviderId);
-                episodeId ??= episodeInfo.ProviderIds.GetValueOrDefault(Constants.ProviderId_Old);
+                var episodeId = episode.GetProviderId(Constants.ProviderId);
+                episodeId ??= episode.ProviderIds.GetValueOrDefault(Constants.ProviderId_Old);
 
                 if (!string.IsNullOrEmpty(episodeId) && episodeId.Contains("/episode/"))
                 {
@@ -141,12 +142,19 @@ public static class Helper
             if (id == 0) { int.TryParse(info.GetProviderId(Constants.ProviderId_Old), out id); }
             if (id == 0) { int.TryParse(info.GetProviderId(Constants.ProviderId_OpenDouban), out id); }
 
-            if (id == 0 && info is SeasonInfo seasonInfo && ((seasonInfo.IndexNumber ?? 0) < 2 || ignoreSeasonIndex))
+            if (id == 0 && info is SeasonInfo season && ((season.IndexNumber ?? 0) < 2 || ignoreSeasonIndex))
             {
-                int.TryParse(seasonInfo.SeriesProviderIds.GetValueOrDefault(Constants.ProviderId), out id);
-                if (id == 0) { int.TryParse(seasonInfo.SeriesProviderIds.GetValueOrDefault(Constants.ProviderId_Old), out id); }
-                if (id == 0) { int.TryParse(seasonInfo.SeriesProviderIds.GetValueOrDefault(Constants.ProviderId_OpenDouban), out id); }
+                int.TryParse(season.SeriesProviderIds.GetValueOrDefault(Constants.ProviderId), out id);
+                if (id == 0) { int.TryParse(season.SeriesProviderIds.GetValueOrDefault(Constants.ProviderId_Old), out id); }
+                if (id == 0) { int.TryParse(season.SeriesProviderIds.GetValueOrDefault(Constants.ProviderId_OpenDouban), out id); }
             }
+        }
+        if (id == 0 && info is ItemLookupInfo lookup)
+        {
+            var doubanInPath = REGEX_DOUBAN_ATTRIBUTE.Match(Path.GetFileName(lookup.Path));
+            if (!doubanInPath.Success && !string.IsNullOrEmpty(lookup.Name)) { doubanInPath = REGEX_DOUBAN_ATTRIBUTE.Match(lookup.Name); }
+            if (!doubanInPath.Success && (info is SeasonInfo || info is EpisodeInfo)) { doubanInPath = REGEX_DOUBAN_ATTRIBUTE.Match(Path.GetFileName(Path.GetDirectoryName(lookup.Path)) ?? ""); }
+            if (doubanInPath.Success) { int.TryParse(doubanInPath.Groups[1].Value, out id); }
         }
         return id;
     }
