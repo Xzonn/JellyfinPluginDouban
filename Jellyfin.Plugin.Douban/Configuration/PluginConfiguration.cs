@@ -17,4 +17,6 @@ public class PluginConfiguration : BasePluginConfiguration
     public bool FetchCelebrityImages { get; set; } = Helper.DEFAULT_FETCH_CELEBRITY_IMAGES;
 
     public bool OptimizeForFirstSeason { get; set; } = Helper.DEFAULT_OPTIMIZE_FOR_FIRST_SEASON;
+
+    public bool ForceSeriesAsFirstSeason { get; set; } = Helper.DEFAULT_FORCE_SERIES_AS_FIRST_SEASON;
 }

@@ -16,8 +16,20 @@ public class EpisodeProvider(DoubanApi api, ILogger<EpisodeProvider> logger) : I
 
     public async Task<MetadataResult<Episode>> GetMetadata(EpisodeInfo info, CancellationToken token)
     {
+        // Handle specials
+        if (Helper.ParseIfSeasonIsSpecials(info, out var _))
+        {
+            return new MetadataResult<Episode>()
+            {
+                ResultLanguage = Constants.Language,
+                Item = new Episode() { ParentIndexNumber = 0 },
+                HasMetadata = true,
+            };
+        }
+
         token.ThrowIfCancellationRequested();
         logger.LogDebug("EpisodeInfo: {info:l}", JsonSerializer.Serialize(info, options: Constants.JsonSerializerOptions));
+        logger.LogDebug("Index: {index}, parent index: {parent}, path: {path}", info.IndexNumber, info.ParentIndexNumber, info.Path);
         var result = new MetadataResult<Episode> { ResultLanguage = Constants.Language };
 
         var movie = await api.FetchMovie(info, token);
@@ -26,7 +38,7 @@ public class EpisodeProvider(DoubanApi api, ILogger<EpisodeProvider> logger) : I
         var index = 0;
         var fileName = Path.GetFileName(info.Path);
         var indexString = Helper.AnitomySharpParse(fileName, ElementCategory.ElementEpisodeNumber);
-        if (!string.IsNullOrEmpty(indexString)) { index = int.Parse(indexString); }
+        if (!string.IsNullOrEmpty(indexString)) { int.TryParse(indexString, out index); }
         if (index == 0) { index = info.IndexNumber ?? 0; }
         if (index == 0 || index > movie.EpisodeCount) { return result; }
 

@@ -14,8 +14,24 @@ public class SeasonProvider(DoubanApi api, ILogger<SeasonProvider> logger) : IRe
 
     public async Task<MetadataResult<Season>> GetMetadata(SeasonInfo info, CancellationToken token)
     {
+        // Season does not contain sub folders, and info was automatically generated
+        if (info.IndexNumber is null && string.IsNullOrEmpty(info.Path)) { return new MetadataResult<Season>(); }
+
+        // Handle specials
+        if (Helper.ParseIfSeasonIsSpecials(info, out var folderName))
+        {
+            return new MetadataResult<Season>()
+            {
+                ResultLanguage = Constants.Language,
+                Item = new Season() { Name = folderName, IndexNumber = 0 },
+                HasMetadata = true,
+            };
+        }
+
         token.ThrowIfCancellationRequested();
         logger.LogDebug("SeasonInfo: {info:l}", JsonSerializer.Serialize(info, options: Constants.JsonSerializerOptions));
+        logger.LogDebug("Index: {index}, parent index: {parent}, path: {path}", info.IndexNumber, info.ParentIndexNumber, info.Path);
+
         var result = new MetadataResult<Season> { ResultLanguage = Constants.Language };
 
         var subject = await api.FetchMovie(info, token);

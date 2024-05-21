@@ -98,7 +98,19 @@ public partial class DoubanApi
         var isMovie = info is MovieInfo;
 
         var gussedSeason = Helper.GuessSeasonIndex(info);
-        var isFirstSeason = Configuration.OptimizeForFirstSeason && gussedSeason < 2 && (gussedSeason == 1 || (info is SeriesInfo && gussedSeason == 0) || (info is SeasonInfo && (info.IndexNumber ?? 0) < 2));
+        var isFirstSeason = (
+                Configuration.OptimizeForFirstSeason && gussedSeason < 2 &&
+                (
+                    // "第一季", "Season 1" or "S01" in names
+                    gussedSeason == 1 ||
+                    // Series without "第x季" in name
+                    (info is SeriesInfo && gussedSeason == 0) ||
+                    // Season with index number == 0 or 1
+                    (info is SeasonInfo && info.IndexNumber == 1)
+                )
+            ) || (
+                info is SeriesInfo && Configuration.ForceSeriesAsFirstSeason
+            );
 
         if (searchResults.Count == 0)
         {
@@ -106,6 +118,10 @@ public partial class DoubanApi
 
             if (info is EpisodeInfo episodeInfo)
             {
+                names.Add(info.GetProviderId(MetadataProvider.Imdb));
+#if NET8_0_OR_GREATER
+                names.Add(episodeInfo.SeasonProviderIds.GetValueOrDefault(MetadataProvider.Imdb.ToString()));
+#endif
                 // For episode, DO NOT SEARCH NAME DIRECTLY
                 names.Add(Helper.AnitomySharpParse(Path.GetFileName(info.Path), ElementCategory.ElementAnimeTitle));
                 names.Add(Path.GetFileName(Path.GetDirectoryName(info.Path)));

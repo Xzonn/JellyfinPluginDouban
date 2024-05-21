@@ -26,6 +26,7 @@ public static class Helper
     public const bool DEFAULT_FETCH_STAGE_PHOTO = true;
     public const bool DEFAULT_FETCH_CELEBRITY_IMAGES = true;
     public const bool DEFAULT_OPTIMIZE_FOR_FIRST_SEASON = true;
+    public const bool DEFAULT_FORCE_SERIES_AS_FIRST_SEASON = false;
 
     private static Regex REGEX_SID => new(@"\s*sid:\s*(\d+)");
     private static Regex REGEX_IMAGE => new(@"/(p\d+)\.(?:webp|png|jpg|jpeg|gif)$");
@@ -40,6 +41,8 @@ public static class Helper
     private static Regex REGEX_SEASON_2 => new(@"(?<![A-Za-z\d\.']|女神异闻录|Part +)(?<season>[0-2]?\d)$", RegexOptions.IgnoreCase);
     private static Regex REGEX_IMAGE_VOTE => new(@"(\d+)回应");
     private static Regex REGEX_DOUBAN_ATTRIBUTE => new(@"\[(?:douban|doubanid) *[-= ] *(\d+)\]");
+    private static Regex REGEX_SPECIAL_FOLDER_NAME => new(@"^(?:SP|Special|Special Disk|CD|Scan|CM|PV|OAD|OVA|Font|Sub|Menu|Bonus|Extra|Trailer|Sample|NCOP|NCED|NCOP&NCED)s?$", RegexOptions.IgnoreCase);
+    private static Regex REGEX_SPECIAL_FOLDER_NAME_JA => new(@"^(?:映像特典|特典|番外)");
 
     public static string? AnitomySharpParse(string name, ElementCategory category)
     {
@@ -86,6 +89,11 @@ public static class Helper
         if (index == 0) { index = ParseSeasonIndex(info.OriginalTitle); }
         if (index == 0) { index = ParseSeasonIndex(Path.GetFileName(info.Path)); }
         if (index == 0) { int.TryParse(AnitomySharpParse(Path.GetFileName(info.Path), ElementCategory.ElementAnimeSeason), out index); }
+        if (index == 0 && info is EpisodeInfo)
+        {
+            index = ParseSeasonIndex(Path.GetFileName(Path.GetDirectoryName(info.Path)) ?? "");
+            if (index == 0) { int.TryParse(AnitomySharpParse(Path.GetFileName(Path.GetDirectoryName(info.Path)) ?? "", ElementCategory.ElementAnimeSeason), out index); }
+        }
         if (index == 0) { index = ParseSeasonIndex(info.Name, REGEX_SEASON_2); }
 
         return index;
@@ -101,6 +109,24 @@ public static class Helper
         return season;
     }
 
+    public static bool ParseIfSeasonIsSpecials(ItemLookupInfo info, out string? folderName)
+    {
+        if (string.IsNullOrEmpty(info.Path)) { folderName = ""; return false; }
+
+        string? folder = info switch
+        {
+            SeasonInfo => info.Path,
+            EpisodeInfo => Path.GetDirectoryName(info.Path),
+            _ => null,
+        };
+        folderName = Path.GetFileName(folder);
+        if (!string.IsNullOrEmpty(folderName) && (REGEX_SPECIAL_FOLDER_NAME.IsMatch(folderName) || REGEX_SPECIAL_FOLDER_NAME_JA.IsMatch(folderName)))
+        {
+            return true;
+        }
+        return false;
+    }
+
     public static string ReplaceSeasonIndexWith(string name, int index)
     {
         name = $"{REGEX_SEASON_2.Replace(REGEX_SEASON.Replace(name, ""), "")} 第{index}季";
@@ -113,17 +139,13 @@ public static class Helper
         if (info is EpisodeInfo episode)
         {
 #if NET8_0_OR_GREATER
-            int.TryParse(episode.SeasonProviderIds.GetValueOrDefault(Constants.ProviderId), out id);
-            if (id == 0) { int.TryParse(episode.SeasonProviderIds.GetValueOrDefault(Constants.ProviderId_Old), out id); }
-            if (id == 0) { int.TryParse(episode.SeasonProviderIds.GetValueOrDefault(Constants.ProviderId_OpenDouban), out id); }
+            var parentProviderIds = episode.SeasonProviderIds;
+#else
+            var parentProviderIds = episode.SeriesProviderIds;
 #endif
-
-            if (id == 0)
-            {
-                int.TryParse(episode.SeriesProviderIds.GetValueOrDefault(Constants.ProviderId), out id);
-                if (id == 0) { int.TryParse(episode.SeriesProviderIds.GetValueOrDefault(Constants.ProviderId_Old), out id); }
-                if (id == 0) { int.TryParse(episode.SeriesProviderIds.GetValueOrDefault(Constants.ProviderId_OpenDouban), out id); }
-            }
+            int.TryParse(parentProviderIds.GetValueOrDefault(Constants.ProviderId), out id);
+            if (id == 0) { int.TryParse(parentProviderIds.GetValueOrDefault(Constants.ProviderId_Old), out id); }
+            if (id == 0) { int.TryParse(parentProviderIds.GetValueOrDefault(Constants.ProviderId_OpenDouban), out id); }
 
             if (id == 0)
             {
@@ -142,16 +164,16 @@ public static class Helper
             if (id == 0) { int.TryParse(info.GetProviderId(Constants.ProviderId_Old), out id); }
             if (id == 0) { int.TryParse(info.GetProviderId(Constants.ProviderId_OpenDouban), out id); }
 
-            if (id == 0 && info is SeasonInfo season && ((season.IndexNumber ?? 0) < 2 || ignoreSeasonIndex))
+            if (id == 0 && info is SeasonInfo season && (season.IndexNumber == 1 || ignoreSeasonIndex))
             {
                 int.TryParse(season.SeriesProviderIds.GetValueOrDefault(Constants.ProviderId), out id);
                 if (id == 0) { int.TryParse(season.SeriesProviderIds.GetValueOrDefault(Constants.ProviderId_Old), out id); }
                 if (id == 0) { int.TryParse(season.SeriesProviderIds.GetValueOrDefault(Constants.ProviderId_OpenDouban), out id); }
             }
         }
-        if (id == 0 && info is ItemLookupInfo lookup)
+        if (id == 0 && info is ItemLookupInfo lookup && !string.IsNullOrEmpty(lookup.Path))
         {
-            var doubanInPath = REGEX_DOUBAN_ATTRIBUTE.Match(Path.GetFileName(lookup.Path));
+            var doubanInPath = REGEX_DOUBAN_ATTRIBUTE.Match(Path.GetFileName(lookup.Path) ?? "");
             if (!doubanInPath.Success && !string.IsNullOrEmpty(lookup.Name)) { doubanInPath = REGEX_DOUBAN_ATTRIBUTE.Match(lookup.Name); }
             if (!doubanInPath.Success && (info is SeasonInfo || info is EpisodeInfo)) { doubanInPath = REGEX_DOUBAN_ATTRIBUTE.Match(Path.GetFileName(Path.GetDirectoryName(lookup.Path)) ?? ""); }
             if (doubanInPath.Success) { int.TryParse(doubanInPath.Groups[1].Value, out id); }
@@ -504,6 +526,8 @@ public static class Helper
             ["originalTitle"] = item.OriginalTitle,
             ["communityRating"] = item.CommunityRating,
             ["providerIds"] = item.ProviderIds,
+            ["index"] = item.IndexNumber,
+            ["parentIndex"] = item.ParentIndexNumber,
         };
 
         return JsonSerializer.Serialize(dict, options: Constants.JsonSerializerOptions);
