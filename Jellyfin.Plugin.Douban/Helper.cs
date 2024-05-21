@@ -1,4 +1,4 @@
-﻿using HtmlAgilityPack;
+using HtmlAgilityPack;
 using Jellyfin.Plugin.Douban.Model;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Providers;
@@ -36,8 +36,8 @@ public static class Helper
     private static Regex REGEX_DATE => new(@"\d{4}-\d\d-\d\d");
     private static Regex REGEX_CELEBRITY => new(@"/celebrity/(\d+)/");
     private static Regex REGEX_DOUBANIO_HOST => new(@"https?://img\d+\.doubanio.com");
-    private static Regex REGEX_SEASON => new(@" *第(?<season>[一二三四五六七八九十百千万\d]+)[季期部]| *\b(?:Season) (?<season>\d+)", RegexOptions.IgnoreCase);
-    private static Regex REGEX_SEASON_2 => new(@"(?<![a-z\d\.']|女神异闻录|Part )(?<season>\d{1,2})$");
+    private static Regex REGEX_SEASON => new(@" *第(?<season>[一二三四五六七八九十百千万\d]+)[季期部]| *\b(?:Season +|S0*)(?<season>\d+)", RegexOptions.IgnoreCase);
+    private static Regex REGEX_SEASON_2 => new(@"(?<![A-Za-z\d\.']|女神异闻录|Part +)(?<season>[0-2]?\d)$", RegexOptions.IgnoreCase);
     private static Regex REGEX_IMAGE_VOTE => new(@"(\d+)回应");
 
     public static string? AnitomySharpParse(string name, ElementCategory category)
