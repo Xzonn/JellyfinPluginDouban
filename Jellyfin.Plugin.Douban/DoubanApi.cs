@@ -165,7 +165,8 @@ public partial class DoubanApi
                 // Season name is auto-generated, no need to search
                 if ((info is SeasonInfo || info is EpisodeInfo) && REGEX_AUTOMATIC_SEASON_NAME.IsMatch(name)) continue;
 
-                if ((info.Year ?? 0) > 0 && !new Regex($@"(?<![A-Za-z\d_]){info.Year}(?![A-Za-z\d_])").IsMatch(name))
+                // 1920 is resolution, not year
+                if ((info.Year ?? 0) > 1920 && (info.Year ?? 0) < (DateTime.Now.Year + 10) && !new Regex($@"(?<![A-Za-z\d_]){info.Year}(?![A-Za-z\d_])").IsMatch(name))
                 {
                     var yearName = $"{name} {info.Year}";
                     if (!searchNames.Contains(yearName)) { searchNames.Add(yearName); }
