@@ -359,7 +359,7 @@ public partial class DoubanApi
     {
         if (Caches.Count > 0 && CacheLastClean < DateTime.Now - TimeSpan.FromDays(1))
         {
-            _log.LogDebug($"Removing expired cache");
+            _log.LogDebug("Removing expired cache");
             Caches.Where(_ => _.Value.time < DateTime.Now - TimeSpan.FromDays(1)).ToList().ForEach(_ => Caches.Remove(_.Key));
             CacheLastClean = DateTime.Now;
         }
@@ -387,6 +387,7 @@ public partial class DoubanApi
         {
             message.Headers.Add("Cookie", Configuration.DoubanCookie);
         }
+        _log.LogDebug("Getting url: {url}", url);
         var response = await _httpClient.SendAsync(message, token).ConfigureAwait(false);
         LastSearch = DateTime.Now;
         if (!response.IsSuccessStatusCode)
