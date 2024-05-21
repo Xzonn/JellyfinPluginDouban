@@ -161,6 +161,10 @@ public static class Helper
         {
             return true;
         }
+        if (!string.IsNullOrEmpty(info.Name) && (REGEX_SPECIAL_FOLDER_NAME.IsMatch(info.Name) || REGEX_SPECIAL_FOLDER_NAME_JA.IsMatch(info.Name)))
+        {
+            return true;
+        }
         return false;
     }
 
@@ -216,6 +220,20 @@ public static class Helper
             if (doubanInPath.Success) { int.TryParse(doubanInPath.Groups[1].Value, out id); }
         }
         return id;
+    }
+
+    public static int? ParseDoubanEpisodeId(IHasProviderIds info)
+    {
+        if (info is not EpisodeInfo episode) { return null; }
+
+        var episodeId = episode.GetProviderId(Constants.ProviderId);
+        episodeId ??= episode.ProviderIds.GetValueOrDefault(Constants.ProviderId_Old);
+
+        if (!string.IsNullOrEmpty(episodeId) && episodeId.Contains("/episode/") && int.TryParse(episodeId.Split("/episode/")[1], out var id))
+        {
+            return id;
+        }
+        return null;
     }
 
     public static async Task<int> ParseDoubanPersonageId(IHasProviderIds info, DoubanApi api, CancellationToken token = default)

@@ -35,10 +35,21 @@ public class EpisodeProvider(DoubanApi api, ILogger<EpisodeProvider> logger) : I
         var movie = await api.FetchMovie(info, token);
         if (string.IsNullOrEmpty(movie.Sid)) { return result; }
 
-        var index = 0;
-        var fileName = Path.GetFileName(info.Path);
-        var indexString = Helper.AnitomySharpParse(fileName, ElementCategory.ElementEpisodeNumber);
-        if (!string.IsNullOrEmpty(indexString)) { int.TryParse(indexString, out index); }
+        var index = Helper.ParseDoubanEpisodeId(info) ?? 0;
+        if (index == 0)
+        {
+            var fileName = Path.GetFileName(info.Path);
+            var indexString = Helper.AnitomySharpParse(fileName, ElementCategory.ElementEpisodeNumber);
+            if (indexString?.Length == 1)
+            {
+                // In most cases, the number of episodes in file name should be at least two digits (e.g., 01, 05).
+                // If the number of episodes is only one digit, it is likely to be part of the series name.
+                // e.g., [Sakurato] Hibike! Euphonium 3 [05][HEVC-10bit 1080p AAC][CHS&CHT].mkv
+                var altIndex = Helper.AnitomySharpParse(fileName, ElementCategory.ElementEpisodeNumberAlt);
+                if (altIndex?.Length > 1) { indexString = altIndex; }
+            }
+            if (!string.IsNullOrEmpty(indexString)) { int.TryParse(indexString, out index); }
+        }
         if (index == 0) { index = info.IndexNumber ?? 0; }
         if (index == 0 || index > movie.EpisodeCount) { return result; }
 
