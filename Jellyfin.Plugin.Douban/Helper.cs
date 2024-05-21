@@ -39,6 +39,8 @@ public static class Helper
     private static Regex REGEX_DOUBANIO_HOST => new(@"https?://img\d+\.doubanio.com");
     private static Regex REGEX_SEASON => new(@" *第(?<season>[一二三四五六七八九十百千万\d]+)[季期部]| *\b(?:Season +|S0*)(?<season>\d+)", RegexOptions.IgnoreCase);
     private static Regex REGEX_SEASON_2 => new(@"(?<![A-Za-z\d\.']|女神异闻录|Part +)(?<season>[0-2]?\d)$", RegexOptions.IgnoreCase);
+    private static Regex REGEX_SEASON_ROMAN => new(@"\b(?<season>[IVX]+)$");
+    private static Regex REGEX_SEASON_ROMAN_2 => new(@"(?<season>[Ⅰ-Ⅻ])$");
     private static Regex REGEX_IMAGE_VOTE => new(@"(\d+)回应");
     private static Regex REGEX_DOUBAN_ATTRIBUTE => new(@"\[(?:douban|doubanid) *[-= ] *(\d+)\]");
     private static Regex REGEX_SPECIAL_FOLDER_NAME => new(@"^(?:SP|Special|Special Disk|CD|Scan|CM|PV|OAD|OVA|Font|Sub|Menu|Bonus|Extra|Trailer|Sample|NCOP|NCED|NCOP&NCED)s?$", RegexOptions.IgnoreCase);
@@ -59,7 +61,6 @@ public static class Helper
 
     public static int ConvertChineseNumberToNumber(string chinese)
     {
-        if (string.IsNullOrWhiteSpace(chinese)) { return 0; }
         chinese = chinese.Trim();
         if (int.TryParse(chinese, out int result)) { return result; }
         int unit = 1;
@@ -83,6 +84,38 @@ public static class Helper
         return result;
     }
 
+
+    // https://stackoverflow.com/questions/14900228/roman-numerals-to-integers
+    // Credit: David DeMar
+    public static int ConvertRomanNumberToNumber(string roman)
+    {
+        roman = roman.Trim();
+
+        Dictionary<char, int> romanDict = new()
+        {
+            ['I'] = 1,
+            ['V'] = 5,
+            ['X'] = 10,
+            ['L'] = 50,
+            ['C'] = 100,
+            ['D'] = 500,
+            ['M'] = 1000,
+        };
+        int number = 0;
+        for (int i = 0; i < roman.Length; i++)
+        {
+            if (i + 1 < roman.Length && romanDict[roman[i]] < romanDict[roman[i + 1]])
+            {
+                number -= romanDict[roman[i]];
+            }
+            else
+            {
+                number += romanDict[roman[i]];
+            }
+        }
+        return number;
+    }
+
     public static int GuessSeasonIndex(ItemLookupInfo info)
     {
         int index = ParseSeasonIndex(info.Name);
@@ -95,16 +128,20 @@ public static class Helper
             if (index == 0) { int.TryParse(AnitomySharpParse(Path.GetFileName(Path.GetDirectoryName(info.Path)) ?? "", ElementCategory.ElementAnimeSeason), out index); }
         }
         if (index == 0) { index = ParseSeasonIndex(info.Name, REGEX_SEASON_2); }
+        if (index == 0) { index = ParseSeasonIndex(info.Name, REGEX_SEASON_ROMAN, ConvertRomanNumberToNumber); }
+        if (index == 0) { index = ParseSeasonIndex(info.Name, REGEX_SEASON_ROMAN_2, (_) => _[0] - 'Ⅰ' + 1); }
 
         return index;
     }
 
-    public static int ParseSeasonIndex(string name, Regex? pattern = null)
+    public static int ParseSeasonIndex(string name, Regex? pattern = null, Func<string, int>? converter = null)
     {
         if (string.IsNullOrWhiteSpace(name)) { return 0; }
 
         var seasonMatch = (pattern ?? REGEX_SEASON).Match(name ?? "");
-        var season = ConvertChineseNumberToNumber(seasonMatch.Groups.GetValueOrDefault("season")?.Value ?? "");
+        if (!seasonMatch.Success) { return 0; }
+
+        var season = (converter ?? ConvertChineseNumberToNumber)(seasonMatch.Groups.GetValueOrDefault("season")?.Value ?? "");
 
         return season;
     }
