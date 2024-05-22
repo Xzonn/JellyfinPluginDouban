@@ -1,4 +1,5 @@
-﻿using MediaBrowser.Controller.Entities.TV;
+﻿using Jellyfin.Plugin.Douban.Configuration;
+using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Providers;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Providers;
@@ -11,6 +12,15 @@ namespace Jellyfin.Plugin.Douban.Provider;
 
 public class EpisodeProvider(DoubanApi api, ILogger<EpisodeProvider> logger) : IRemoteMetadataProvider<Episode, EpisodeInfo>, IHasOrder
 {
+    private static PluginConfiguration Configuration
+    {
+        get
+        {
+            if (Plugin.Instance != null) { return Plugin.Instance.Configuration; }
+            return new PluginConfiguration();
+        }
+    }
+
     public int Order => 0;
     public string Name => Constants.ProviderName;
 
@@ -53,18 +63,20 @@ public class EpisodeProvider(DoubanApi api, ILogger<EpisodeProvider> logger) : I
         if (index == 0) { index = info.IndexNumber ?? 0; }
         if (index == 0 || index > movie.EpisodeCount) { return result; }
 
-        var subject = await api.FetchMovieEpisode(movie.Sid, index, token);
-        if (string.IsNullOrEmpty(subject.Name)) { return result; }
-
         result.Item = new Episode()
         {
-            Name = subject.Name,
-            OriginalTitle = subject.OriginalName,
             IndexNumber = index,
-            Overview = subject.Intro,
-            PremiereDate = subject.ScreenTime,
             ParentIndexNumber = movie.SeasonIndex,
         };
+        if (Configuration.UseEpisodeInformation)
+        {
+            var subject = await api.FetchMovieEpisode(movie.Sid, index, token);
+
+            result.Item.Name = subject.Name;
+            result.Item.OriginalTitle = subject.OriginalName;
+            result.Item.Overview = subject.Intro;
+            result.Item.PremiereDate = subject.ScreenTime;
+        }
         result.Item.SetProviderId(Constants.ProviderId, $"{movie.Sid}/episode/{index}");
         result.QueriedById = true;
         result.HasMetadata = true;

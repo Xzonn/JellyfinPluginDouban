@@ -27,6 +27,8 @@ public static class Helper
     public const bool DEFAULT_FETCH_CELEBRITY_IMAGES = true;
     public const bool DEFAULT_OPTIMIZE_FOR_FIRST_SEASON = true;
     public const bool DEFAULT_FORCE_SERIES_AS_FIRST_SEASON = false;
+    public const bool DEFAULT_USE_EPISODE_INFORMATION = true;
+    public const bool DEFAULT_USE_AUTOMATICAL_EPISODE_TITLES = true;
 
     private static Regex REGEX_SID => new(@"\s*sid:\s*(\d+)");
     private static Regex REGEX_IMAGE => new(@"/(p\d+)\.(?:webp|png|jpg|jpeg|gif)$");
@@ -483,7 +485,7 @@ public static class Helper
         return results;
     }
 
-    public static ApiEpisodeSubject ParseMovieEpisode(string responseText, int index)
+    public static ApiEpisodeSubject ParseMovieEpisode(string responseText, int index, bool useAutomaticalEpisodeTitles = DEFAULT_USE_AUTOMATICAL_EPISODE_TITLES)
     {
         var htmlDoc = new HtmlDocument();
         htmlDoc.LoadHtml(responseText);
@@ -499,7 +501,7 @@ public static class Helper
 
         var result = new ApiEpisodeSubject()
         {
-            Name = name == "暂无，欢迎添加" ? $"第 {index} 集" : name,
+            Name = name == "暂无，欢迎添加" ? (useAutomaticalEpisodeTitles ? $"第 {index} 集" : null) : name,
             OriginalName = originalName == "暂无，欢迎添加" ? null : originalName,
             ScreenTime = screenTime == DateTime.MinValue ? null : screenTime,
             Intro = info!.GetValueOrDefault("剧情简介", "暂无，欢迎添加") == "暂无，欢迎添加" ? null : intro,

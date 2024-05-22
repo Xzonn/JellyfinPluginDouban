@@ -8,80 +8,112 @@
     </head>
 
     <body>
-        <div class="page type-interior pluginConfigurationPage" data-require="emby-input,emby-button,emby-select,emby-checkbox" data-role="page"
-            id="doubanConfigurationPage">
+        <div class="page type-interior pluginConfigurationPage" data-require="emby-input,emby-button,emby-select,emby-checkbox" data-role="page" id="doubanConfigurationPage">
+            <style>
+                fieldset {
+                    border-radius: .2em;
+                }
+
+                fieldset > *:last-child {
+                    margin-bottom: 0;
+                }
+            </style>
+
             <div data-role="content">
                 <div class="content-primary">
                     <form id="doubanConfigurationForm">
                         <div class="inputContainer" style="text-align: center; font-size: 1.5em; font-weight: bold;">
                             <a href="https://xzonn.top/posts/Jellyfin-Plugin-Douban.html">关于本插件</a>
                         </div>
-                        <div class="inputContainer">
-                            <label class="inputLabel inputLabelUnfocused" for="CdnServer">豆瓣图片服务器</label>
-                            <input id="CdnServer" name="CdnServer" type="text" is="emby-input" />
-                            <div class="fieldDescription">豆瓣图片的服务器。<br />若要使用本插件自带的反向代理，请填写：<code class="emby-select-withcolor"><i>（服务器地址）</i>/Plugins/Douban/Image?url=</code>。<br />例如：<code class="emby-select-withcolor">http://localhost:8096/Plugins/Douban/Image?url=</code>（注意最后有一个等号 <code>=</code>）。</div>
-                            <div>
-                                <button id="CdnServerTest" is="emby-button" class="raised emby-button">
-                                    <span>测试服务器</span>
-                                </button>
+                        <fieldset class="inputContainer">
+                            <legend>基本</legend>
+                            <div class="inputContainer">
+                                <label class="inputLabel inputLabelUnfocused" for="DoubanCookie">Cookie</label>
+                                <input id="DoubanCookie" name="DoubanCookie" type="text" is="emby-input" />
+                                <div class="fieldDescription">豆瓣登录状态的 Cookie。</div>
                             </div>
-                            <div class="fieldDescription">如果点击按钮后出现一张图片，说明配置正确。</div>
-                        </div>
-                        <div class="inputContainer">
-                            <label class="inputLabel inputLabelUnfocused" for="DoubanCookie">Cookie</label>
-                            <input id="DoubanCookie" name="DoubanCookie" type="text" is="emby-input" />
-                            <div class="fieldDescription">豆瓣登录状态的 Cookie。</div>
-                        </div>
-                        <div class="inputContainer">
-                            <label class="inputLabel inputLabelUnfocused" for="RequestTimeSpan">请求时间间隔</label>
-                            <input id="RequestTimeSpan" name="RequestTimeSpan" type="number" is="emby-input" />
-                            <div class="fieldDescription">每两次请求之间的时间间隔（毫秒），建议在需要搜索大量数据时将此数值提高到 5000 及以上。</div>
-                        </div>
-                        <div class="inputContainer">
-                            <label class="inputLabel inputLabelUnfocused" for="ImageSortingMethod">图片排序方式</label>
-                            <select class="emby-select-withcolor emby-select" id="ImageSortingMethod" name="ImageSortingMethod" is="emby-select">
-                                <option value="Default">默认</option>
-                                <option value="Comment">按回复</option>
-                                <option value="Time">按时间</option>
-                                <option value="Size">按尺寸</option>
-                            </select>
-                            <div class="fieldDescription">图片的排序方式。影响默认获取的海报和背景图。</div>
-                        </div>
-                        <div class="checkboxContainer checkboxContainer-withDescription">
-                            <label class="emby-checkbox-label">
-                                <input id="DistinguishUsingAspectRatio" name="DistinguishUsingAspectRatio" type="checkbox" is="emby-checkbox" />
-                                <span>根据宽高比区分海报和背景图</span>
-                            </label>
-                            <div class="fieldDescription">宽大于高的图片视为背景图，否则视为海报。</div>
-                        </div>
-                        <div class="checkboxContainer checkboxContainer-withDescription">
-                            <label class="emby-checkbox-label">
-                                <input id="FetchStagePhoto" name="FetchStagePhoto" type="checkbox" is="emby-checkbox" />
-                                <span>获取图片时获取剧照</span>
-                            </label>
-                            <div class="fieldDescription">默认视为背景图。受上一个选项影响。</div>
-                        </div>
-                        <div class="checkboxContainer checkboxContainer-withDescription">
-                            <label class="emby-checkbox-label">
-                                <input id="FetchCelebrityImages" name="FetchCelebrityImages" type="checkbox" is="emby-checkbox" />
-                                <span>在影视页面获取演职员照片</span>
-                            </label>
-                            <div class="fieldDescription">获取演职员图片可能会对豆瓣服务器产生大量请求，建议在需要搜索大量数据时关闭。</div>
-                        </div>
-                        <div class="checkboxContainer checkboxContainer-withDescription">
-                            <label class="emby-checkbox-label">
-                                <input id="OptimizeForFirstSeason" name="OptimizeForFirstSeason" type="checkbox" is="emby-checkbox" />
-                                <span>优化对第一季的搜索</span>
-                            </label>
-                            <div class="fieldDescription">若文件信息中不包含“第x季”，但首条搜索结果包含“第x季”，则重新搜索“<i>（影视名）</i> 第1季”。</div>
-                        </div>
-                        <div class="checkboxContainer checkboxContainer-withDescription">
-                            <label class="emby-checkbox-label">
-                                <input id="ForceSeriesAsFirstSeason" name="ForceSeriesAsFirstSeason" type="checkbox" is="emby-checkbox" />
-                                <span>强制将剧集首季作为系列信息</span>
-                            </label>
-                            <div class="fieldDescription">对系列信息重新搜索“<i>（影视名）</i> 第1季”。</div>
-                        </div>
+                        </fieldset>
+                        <fieldset class="inputContainer">
+                            <legend>图片</legend>
+                            <div class="inputContainer">
+                                <label class="inputLabel inputLabelUnfocused" for="CdnServer">豆瓣图片服务器</label>
+                                <input id="CdnServer" name="CdnServer" type="text" is="emby-input" />
+                                <div class="fieldDescription">豆瓣图片的服务器。<br />若要使用本插件自带的反向代理，请填写：<code class="emby-select-withcolor"><i>（服务器地址）</i>/Plugins/Douban/Image?url=</code>。<br />例如：<code class="emby-select-withcolor">http://localhost:8096/Plugins/Douban/Image?url=</code>（注意最后有一个等号 <code>=</code>）。</div>
+                                <div>
+                                    <button id="CdnServerTest" is="emby-button" class="raised emby-button">
+                                        <span>测试服务器</span>
+                                    </button>
+                                </div>
+                                <div class="fieldDescription">如果点击按钮后出现一张图片，说明配置正确。</div>
+                            </div>
+                            <div class="inputContainer">
+                                <label class="inputLabel inputLabelUnfocused" for="RequestTimeSpan">请求时间间隔</label>
+                                <input id="RequestTimeSpan" name="RequestTimeSpan" type="number" is="emby-input" />
+                                <div class="fieldDescription">每两次请求之间的时间间隔（毫秒），建议在需要搜索大量数据时将此数值提高到 5000 及以上。</div>
+                            </div>
+                            <div class="inputContainer">
+                                <label class="inputLabel inputLabelUnfocused" for="ImageSortingMethod">图片排序方式</label>
+                                <select class="emby-select-withcolor emby-select" id="ImageSortingMethod" name="ImageSortingMethod" is="emby-select">
+                                    <option value="Default">默认</option>
+                                    <option value="Comment">按回复</option>
+                                    <option value="Time">按时间</option>
+                                    <option value="Size">按尺寸</option>
+                                </select>
+                                <div class="fieldDescription">图片的排序方式。影响默认获取的海报和背景图。</div>
+                            </div>
+                            <div class="checkboxContainer checkboxContainer-withDescription">
+                                <label class="emby-checkbox-label">
+                                    <input id="DistinguishUsingAspectRatio" name="DistinguishUsingAspectRatio" type="checkbox" is="emby-checkbox" />
+                                    <span>根据宽高比区分海报和背景图</span>
+                                </label>
+                                <div class="fieldDescription">宽大于高的图片视为背景图，否则视为海报。</div>
+                            </div>
+                            <div class="checkboxContainer checkboxContainer-withDescription">
+                                <label class="emby-checkbox-label">
+                                    <input id="FetchStagePhoto" name="FetchStagePhoto" type="checkbox" is="emby-checkbox" />
+                                    <span>获取图片时获取剧照</span>
+                                </label>
+                                <div class="fieldDescription">默认视为背景图。受上一个选项影响。</div>
+                            </div>
+                            <div class="checkboxContainer checkboxContainer-withDescription">
+                                <label class="emby-checkbox-label">
+                                    <input id="FetchCelebrityImages" name="FetchCelebrityImages" type="checkbox" is="emby-checkbox" />
+                                    <span>在影视页面获取演职员照片</span>
+                                </label>
+                                <div class="fieldDescription">获取演职员图片可能会对豆瓣服务器产生大量请求，建议在需要搜索大量数据时关闭。</div>
+                            </div>
+                        </fieldset>
+                        <fieldset class="inputContainer">
+                            <legend>剧集</legend>
+                            <div class="checkboxContainer checkboxContainer-withDescription">
+                                <label class="emby-checkbox-label">
+                                    <input id="OptimizeForFirstSeason" name="OptimizeForFirstSeason" type="checkbox" is="emby-checkbox" />
+                                    <span>优化对第一季的搜索</span>
+                                </label>
+                                <div class="fieldDescription">若文件信息中不包含“第x季”，但首条搜索结果包含“第x季”，则重新搜索“<i>（影视名）</i> 第1季”。</div>
+                            </div>
+                            <div class="checkboxContainer checkboxContainer-withDescription">
+                                <label class="emby-checkbox-label">
+                                    <input id="ForceSeriesAsFirstSeason" name="ForceSeriesAsFirstSeason" type="checkbox" is="emby-checkbox" />
+                                    <span>强制将剧集首季作为系列信息</span>
+                                </label>
+                                <div class="fieldDescription">对系列信息重新搜索“<i>（影视名）</i> 第1季”。</div>
+                            </div>
+                            <div class="checkboxContainer checkboxContainer-withDescription">
+                                <label class="emby-checkbox-label">
+                                    <input id="UseEpisodeInformation" name="UseEpisodeInformation" type="checkbox" is="emby-checkbox" />
+                                    <span>采用豆瓣的单集信息</span>
+                                </label>
+                                <div class="fieldDescription">注意：豆瓣的单集剧集的条目内容良莠不齐，有些集数的介绍甚至是对剧情的吐槽。如果关闭此项，则本插件仅返回解析出来的集数。</div>
+                            </div>
+                            <div class="checkboxContainer checkboxContainer-withDescription">
+                                <label class="emby-checkbox-label">
+                                    <input id="UseAutomaticalEpisodeTitles" name="UseAutomaticalEpisodeTitles" type="checkbox" is="emby-checkbox" />
+                                    <span>对不存在标题的单集采用自动生成的标题</span>
+                                </label>
+                                <div class="fieldDescription">根据解析出来的集数生成“第x集”。</div>
+                            </div>
+                        </fieldset>
                         <div>
                             <button is="emby-button" type="submit" class="raised button-submit block emby-button">
                                 <span>保存</span>
