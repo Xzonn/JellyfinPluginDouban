@@ -544,7 +544,7 @@ public static class Helper
         image ??= content.QuerySelector(".subject-target img.avatar");
         var name = image.Attributes["alt"].Value;
         var posterUrl = image.Attributes["src"].Value;
-        if (posterUrl.Contains("celebrity-default"))
+        if (posterUrl.Contains("celebrity-default") || posterUrl.Contains("personage-default"))
         {
             posterUrl = null;
         }
