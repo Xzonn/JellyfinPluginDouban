@@ -5,6 +5,7 @@ using MediaBrowser.Controller.Providers;
 using MediaBrowser.Model.Dto;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Providers;
+using System.Globalization;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Web;
@@ -268,8 +269,8 @@ public static class Helper
             var name = link.InnerText.Trim();
             var posterId = REGEX_IMAGE.Match(_.QuerySelector(".pic img").Attributes["src"].Value).Groups[1].Value;
             var type = _.QuerySelector(".content .title h3 span").InnerText.Trim().TrimStart('[').TrimEnd(']');
-            var rating = "0.0";
-            if (_.QuerySelector(".rating-info .rating_nums") is HtmlNode __) { rating = __.InnerText.Trim(); }
+            var rating = _?.QuerySelector(".rating-info .rating_nums")?.InnerText.Trim();
+            rating = string.IsNullOrEmpty(rating) ? "0.0" : rating;
             var subjectCast = _.QuerySelector(".rating-info .subject-cast")?.InnerText?.Split("/");
             // 35196946 can not be rated
             subjectCast ??= _.QuerySelector(".rating-info")?.InnerText?.Split("/");
@@ -286,7 +287,7 @@ public static class Helper
                 Name = name,
                 PosterId = posterId,
                 Type = type,
-                Rating = Convert.ToDecimal(rating),
+                Rating = decimal.Parse(rating, CultureInfo.InvariantCulture),
                 OriginalName = originalName,
                 Year = year,
             };
@@ -350,14 +351,14 @@ public static class Helper
             Name = name,
             PosterId = posterId,
             Type = type,
-            Rating = Convert.ToDecimal(rating),
+            Rating = decimal.Parse(rating, CultureInfo.InvariantCulture),
             OriginalName = string.IsNullOrEmpty(originalName) ? name : originalName,
             Year = year,
             Intro = intro,
             Genres = info!.GetValueOrDefault("类型")?.Split("/").Select(_ => _.Trim()).ToArray(),
             Website = info!.GetValueOrDefault("官方网站", null),
             Country = info!.GetValueOrDefault("制片国家/地区")?.Split("/").Select(_ => _.Trim()).ToArray(),
-            ScreenTime = string.IsNullOrEmpty(screenTime) ? null : Convert.ToDateTime(screenTime),
+            ScreenTime = string.IsNullOrEmpty(screenTime) ? null : DateTime.ParseExact(screenTime, "yyyy-MM-dd", CultureInfo.InvariantCulture),
             ImdbId = info!.GetValueOrDefault("IMDb", null),
             SeasonIndex = seasonIndex,
             EpisodeCount = episodeCount,
@@ -576,8 +577,8 @@ public static class Helper
             OriginalName = string.IsNullOrEmpty(originalName) ? name : originalName,
             Intro = intro,
             Gender = info!.GetValueOrDefault("性别", null),
-            Birthdate = string.IsNullOrEmpty(birthdate) ? null : Convert.ToDateTime(birthdate),
-            Deathdate = string.IsNullOrEmpty(deathdate) ? null : Convert.ToDateTime(deathdate),
+            Birthdate = string.IsNullOrEmpty(birthdate) ? null : DateTime.ParseExact(birthdate, "yyyy年MM月dd日", CultureInfo.InvariantCulture),
+            Deathdate = string.IsNullOrEmpty(deathdate) ? null : DateTime.ParseExact(deathdate, "yyyy年MM月dd日", CultureInfo.InvariantCulture),
             Birthplace = string.IsNullOrEmpty(bitrhplace) ? null : [bitrhplace],
             Website = info!.GetValueOrDefault("官方网站", null),
             ImdbId = info!.GetValueOrDefault("imdb编号", info!.GetValueOrDefault("IMDb编号", null)),
