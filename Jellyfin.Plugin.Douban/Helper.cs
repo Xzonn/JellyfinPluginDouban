@@ -39,6 +39,7 @@ public static class Helper
     private static Regex REGEX_BRACKET => new(@"\(.+?\)?$");
     private static Regex REGEX_DATE => new(@"\d{4}-\d\d-\d\d");
     private static Regex REGEX_CELEBRITY => new(@"/celebrity/(\d+)/");
+    private static Regex REGEX_PERSONAGE => new(@"/personage/(\d+)/");
     private static Regex REGEX_DOUBANIO_HOST => new(@"https?://img\d+\.doubanio.com");
     private static Regex REGEX_SEASON => new(@" *第(?<season>[一二三四五六七八九十百千万\d]+)[季期部]| *\b(?:Season +|S0*)(?<season>\d+)", RegexOptions.IgnoreCase);
     private static Regex REGEX_SEASON_2 => new(@"(?<![A-Za-z\d\.']|女神异闻录|Part +)(?<season>[0-2]?\d)$", RegexOptions.IgnoreCase);
@@ -382,6 +383,7 @@ public static class Helper
                 var link = _.QuerySelector("a.name");
                 var name = link?.InnerText.Trim().Split(" ")[0];
                 var cid = REGEX_CELEBRITY.Match(link?.Attributes["href"].Value ?? "")?.Groups[1].Value;
+                var pid = REGEX_PERSONAGE.Match(link?.Attributes["href"].Value ?? "")?.Groups[1].Value;
                 var posterUrl = REGEX_IMAGE_URL.Match(_.QuerySelector(".avatar")?.Attributes["style"].Value ?? "")?.Groups[1].Value;
                 if (!fetchCelebrityImages || (posterUrl ?? "").Contains("celebrity-default"))
                 {
@@ -416,7 +418,8 @@ public static class Helper
 #endif
                     Role = role,
                 };
-                result.SetProviderId(Constants.ProviderId, cid);
+                if (!string.IsNullOrWhiteSpace(cid)) { result.SetProviderId(Constants.ProviderId, cid); }
+                if (!string.IsNullOrWhiteSpace(pid)) { result.SetProviderId(Constants.PersonageId, pid); }
                 results.Add(result);
             }
         }
