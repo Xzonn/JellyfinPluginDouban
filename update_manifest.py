@@ -35,10 +35,10 @@ for dotnet_version in [
 
     versions.append({
       "checksum": md5sum.upper(),
-      "changelog": f"https://xzonn.top/posts/Jellyfin-Plugin-Douban.html#%E6%9B%B4%E6%96%B0%E6%97%A5%E5%BF%97",
+      "changelog": r"https://xzonn.top/posts/Jellyfin-Plugin-Douban.html#%E6%9B%B4%E6%96%B0%E6%97%A5%E5%BF%97",
       "targetAbi": f"10.{int(major) + 7}.0.0",
       "sourceUrl": f"https://xzonn.top/JellyfinPluginDouban/dist/{file_name}",
-      "timestamp": (datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(seconds=(int(major) - 1) * 10)).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
+      "timestamp": (datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(minutes=int(major) - 1)).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
       "version": f"{major}.{minor}.{patch}.{revision}",
     })
 
