@@ -12,7 +12,7 @@ latest_tag = os.popen("git describe --tags --abbrev=0").read().strip().removepre
 major, minor, patch = latest_tag.split(".", 2)
 
 if dotnet_version == "net8.0":
-  major = 2
+  major = 3
 elif dotnet_version == "net6.0":
   major = 1
 
