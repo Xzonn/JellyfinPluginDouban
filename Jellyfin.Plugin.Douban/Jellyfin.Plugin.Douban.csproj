@@ -29,7 +29,7 @@
 
   <ItemGroup>
     <PackageReference Include="AnitomySharp.NET6" Version="0.5.1" />
-    <PackageReference Include="HtmlAgilityPack" Version="1.11.70" />
+    <PackageReference Include="HtmlAgilityPack" Version="1.11.71" />
     <PackageReference Include="HtmlAgilityPack.CssSelectors" Version="1.0.2" />
   </ItemGroup>
 
