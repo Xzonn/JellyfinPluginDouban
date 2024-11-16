@@ -9,132 +9,68 @@
     "imageUrl": "https://xzonn.top/JellyfinPluginDouban/Logo.png",
     "versions": [
       {
-        "checksum": "DDE6BD69F0CCA6A555163DA49071BC1C",
-        "changelog": "- 优化了对含有多季的影视的搜索。\n\n**注意**：Jellyfin 10.8.x 版本和 10.9.x 版本的插件互相不兼容。对于 Jellyfin 10.8.13 版本，请使用本插件的 1.x 版本；对于 Jellyfin 10.9.0 及以上版本，请使用本插件的 2.x 版本。不支持 10.8.12 及以下版本。",
-        "targetAbi": "10.8.0.0",
-        "sourceUrl": "https://xzonn.top/JellyfinPluginDouban/dist/Jellyfin.Plugin.Douban.1.0.9.0.zip",
-        "timestamp": "2024-05-16T13:18:37Z",
-        "version": "1.0.9.0"
-      },
-      {
-        "checksum": "22FB31D6157896626832A09E443EE53B",
-        "changelog": "- 初步支持Jellyfin 10.9版本。",
-        "targetAbi": "10.9.0.0",
-        "sourceUrl": "https://xzonn.top/JellyfinPluginDouban/dist/Jellyfin.Plugin.Douban.2.0.0.0.zip",
-        "timestamp": "2024-05-16T13:24:05Z",
-        "version": "2.0.0.0"
-      },
-      {
-        "checksum": "85AD8CF5E8BCF3CD244D23CEA38C9822",
-        "changelog": "- 修复了无法将标识符保存到.nfo文件的问题。 ([#3](https://github.com/Xzonn/JellyfinPluginDouban/issues/3))\n- 部分细节修正。",
-        "targetAbi": "10.8.0.0",
-        "sourceUrl": "https://xzonn.top/JellyfinPluginDouban/dist/Jellyfin.Plugin.Douban.1.1.0.0.zip",
-        "timestamp": "2024-05-18T11:11:43Z",
-        "version": "1.1.0.0"
-      },
-      {
-        "checksum": "392F75D8614A39C2A7E0AE245D485A85",
-        "changelog": "- 修复了无法将标识符保存到.nfo文件的问题。 ([#3](https://github.com/Xzonn/JellyfinPluginDouban/issues/3))\n- 部分细节修正。",
-        "targetAbi": "10.9.0.0",
-        "sourceUrl": "https://xzonn.top/JellyfinPluginDouban/dist/Jellyfin.Plugin.Douban.2.1.0.0.zip",
-        "timestamp": "2024-05-18T11:22:24Z",
-        "version": "2.1.0.0"
-      },
-      {
-        "checksum": "4F702620B8D329928AF8450017A9AB43",
-        "changelog": "- 增加了搜索人物图片的支持。\n- 部分细节修正。",
-        "targetAbi": "10.8.0.0",
-        "sourceUrl": "https://xzonn.top/JellyfinPluginDouban/dist/Jellyfin.Plugin.Douban.1.1.1.0.zip",
-        "timestamp": "2024-05-19T04:34:00Z",
-        "version": "1.1.1.0"
-      },
-      {
-        "checksum": "11A0DE41BF0740E6D6C5B400D3DDDB7E",
-        "changelog": "- 增加了搜索人物图片的支持。\n- 部分细节修正。",
-        "targetAbi": "10.9.0.0",
-        "sourceUrl": "https://xzonn.top/JellyfinPluginDouban/dist/Jellyfin.Plugin.Douban.2.1.1.0.zip",
-        "timestamp": "2024-05-19T04:34:10Z",
-        "version": "2.1.1.0"
-      },
-      {
-        "checksum": "1D34D300185C0FA8535E61410672F596",
-        "changelog": "https://xzonn.top/posts/Jellyfin-Plugin-Douban.html#%E6%9B%B4%E6%96%B0%E6%97%A5%E5%BF%97",
-        "targetAbi": "10.8.0.0",
-        "sourceUrl": "https://xzonn.top/JellyfinPluginDouban/dist/Jellyfin.Plugin.Douban.1.1.2.0.zip",
-        "timestamp": "2024-05-19T09:30:35Z",
-        "version": "1.1.2.0"
-      },
-      {
-        "checksum": "8D17E457B941A677EFA4C822F2B272B8",
-        "changelog": "https://xzonn.top/posts/Jellyfin-Plugin-Douban.html#%E6%9B%B4%E6%96%B0%E6%97%A5%E5%BF%97",
-        "targetAbi": "10.9.0.0",
-        "sourceUrl": "https://xzonn.top/JellyfinPluginDouban/dist/Jellyfin.Plugin.Douban.2.1.2.0.zip",
-        "timestamp": "2024-05-19T09:30:45Z",
-        "version": "2.1.2.0"
-      },
-      {
-        "checksum": "68692C7FD4D7D1D34DBD2E8AFCC718E5",
-        "changelog": "https://xzonn.top/posts/Jellyfin-Plugin-Douban.html#%E6%9B%B4%E6%96%B0%E6%97%A5%E5%BF%97",
-        "targetAbi": "10.8.0.0",
-        "sourceUrl": "https://xzonn.top/JellyfinPluginDouban/dist/Jellyfin.Plugin.Douban.1.2.0.0.zip",
-        "timestamp": "2024-05-21T14:12:12Z",
-        "version": "1.2.0.0"
-      },
-      {
-        "checksum": "4C19A6A300099677D95EF2F86FDBC76B",
-        "changelog": "https://xzonn.top/posts/Jellyfin-Plugin-Douban.html#%E6%9B%B4%E6%96%B0%E6%97%A5%E5%BF%97",
-        "targetAbi": "10.9.0.0",
-        "sourceUrl": "https://xzonn.top/JellyfinPluginDouban/dist/Jellyfin.Plugin.Douban.2.2.0.0.zip",
-        "timestamp": "2024-05-21T14:12:22Z",
-        "version": "2.2.0.0"
-      },
-      {
-        "checksum": "318C61228FA266BD414053ED5722F5C5",
-        "changelog": "https://xzonn.top/posts/Jellyfin-Plugin-Douban.html#%E6%9B%B4%E6%96%B0%E6%97%A5%E5%BF%97",
-        "targetAbi": "10.8.0.0",
-        "sourceUrl": "https://xzonn.top/JellyfinPluginDouban/dist/Jellyfin.Plugin.Douban.1.2.1.0.zip",
-        "timestamp": "2024-05-25T02:06:17Z",
-        "version": "1.2.1.0"
-      },
-      {
-        "checksum": "76BAE5FF243800BACA48C841649C3D13",
-        "changelog": "https://xzonn.top/posts/Jellyfin-Plugin-Douban.html#%E6%9B%B4%E6%96%B0%E6%97%A5%E5%BF%97",
-        "targetAbi": "10.9.0.0",
-        "sourceUrl": "https://xzonn.top/JellyfinPluginDouban/dist/Jellyfin.Plugin.Douban.2.2.1.0.zip",
-        "timestamp": "2024-05-25T02:06:27Z",
-        "version": "2.2.1.0"
-      },
-      {
-        "checksum": "A99480B7F763D1FE08E669677C5387AD",
-        "changelog": "https://xzonn.top/posts/Jellyfin-Plugin-Douban.html#%E6%9B%B4%E6%96%B0%E6%97%A5%E5%BF%97",
-        "targetAbi": "10.8.0.0",
-        "sourceUrl": "https://xzonn.top/JellyfinPluginDouban/dist/Jellyfin.Plugin.Douban.1.2.3.0.zip",
-        "timestamp": "2024-10-28T07:45:41Z",
-        "version": "1.2.3.0"
-      },
-      {
-        "checksum": "A70FF1D8DE3F21AE905A786A0609AF9B",
-        "changelog": "https://xzonn.top/posts/Jellyfin-Plugin-Douban.html#%E6%9B%B4%E6%96%B0%E6%97%A5%E5%BF%97",
-        "targetAbi": "10.9.0.0",
-        "sourceUrl": "https://xzonn.top/JellyfinPluginDouban/dist/Jellyfin.Plugin.Douban.2.2.3.0.zip",
-        "timestamp": "2024-10-28T07:46:41Z",
-        "version": "2.2.3.0"
+        "checksum": "2587D4D48F824C0DC60FF258DCCDE7DD",
+        "changelog": "- 支持Jellyfin 10.10版本。\n- 修复了日期格式。",
+        "targetAbi": "10.10.0.0",
+        "sourceUrl": "https://xzonn.top/JellyfinPluginDouban/dist/Jellyfin.Plugin.Douban.3.3.0.0.zip",
+        "timestamp": "2024-11-15T17:20:04Z",
+        "version": "3.3.0.0"
       },
       {
         "checksum": "63A4EB22AB05B64ACA05B3BBA4EAC739",
-        "changelog": "https://xzonn.top/posts/Jellyfin-Plugin-Douban.html#%E6%9B%B4%E6%96%B0%E6%97%A5%E5%BF%97",
+        "changelog": "- 支持Jellyfin 10.10版本。\n- 修复了日期格式。",
         "targetAbi": "10.8.0.0",
         "sourceUrl": "https://xzonn.top/JellyfinPluginDouban/dist/Jellyfin.Plugin.Douban.1.3.0.0.zip",
         "timestamp": "2024-11-15T17:18:04Z",
         "version": "1.3.0.0"
       },
       {
-        "checksum": "2587D4D48F824C0DC60FF258DCCDE7DD",
-        "changelog": "https://xzonn.top/posts/Jellyfin-Plugin-Douban.html#%E6%9B%B4%E6%96%B0%E6%97%A5%E5%BF%97",
-        "targetAbi": "10.10.0.0",
-        "sourceUrl": "https://xzonn.top/JellyfinPluginDouban/dist/Jellyfin.Plugin.Douban.3.3.0.0.zip",
-        "timestamp": "2024-11-15T17:20:04Z",
-        "version": "3.3.0.0"
+        "checksum": "A70FF1D8DE3F21AE905A786A0609AF9B",
+        "changelog": "- 修复了标识符缺失导致无法获取元数据的问题。",
+        "targetAbi": "10.9.0.0",
+        "sourceUrl": "https://xzonn.top/JellyfinPluginDouban/dist/Jellyfin.Plugin.Douban.2.2.3.0.zip",
+        "timestamp": "2024-10-28T07:46:41Z",
+        "version": "2.2.3.0"
+      },
+      {
+        "checksum": "A99480B7F763D1FE08E669677C5387AD",
+        "changelog": "- 修复了标识符缺失导致无法获取元数据的问题。",
+        "targetAbi": "10.8.0.0",
+        "sourceUrl": "https://xzonn.top/JellyfinPluginDouban/dist/Jellyfin.Plugin.Douban.1.2.3.0.zip",
+        "timestamp": "2024-10-28T07:45:41Z",
+        "version": "1.2.3.0"
+      },
+      {
+        "checksum": "76BAE5FF243800BACA48C841649C3D13",
+        "changelog": "- 修复了解析评分受服务器区域影响的问题。 ([comment](https://github.com/Xzonn/xzonn.github.io/discussions/22#discussioncomment-9545154))\n- 优化了对单集信息的支持。\n- 优化了设置页面。",
+        "targetAbi": "10.9.0.0",
+        "sourceUrl": "https://xzonn.top/JellyfinPluginDouban/dist/Jellyfin.Plugin.Douban.2.2.1.0.zip",
+        "timestamp": "2024-05-25T02:06:27Z",
+        "version": "2.2.1.0"
+      },
+      {
+        "checksum": "318C61228FA266BD414053ED5722F5C5",
+        "changelog": "- 修复了解析评分受服务器区域影响的问题。 ([comment](https://github.com/Xzonn/xzonn.github.io/discussions/22#discussioncomment-9545154))\n- 优化了对单集信息的支持。\n- 优化了设置页面。",
+        "targetAbi": "10.8.0.0",
+        "sourceUrl": "https://xzonn.top/JellyfinPluginDouban/dist/Jellyfin.Plugin.Douban.1.2.1.0.zip",
+        "timestamp": "2024-05-25T02:06:17Z",
+        "version": "1.2.1.0"
+      },
+      {
+        "checksum": "4C19A6A300099677D95EF2F86FDBC76B",
+        "changelog": "- 增加了反向代理。\n- 优化了图片的获取方式。\n- 优化了对季数的解析。",
+        "targetAbi": "10.9.0.0",
+        "sourceUrl": "https://xzonn.top/JellyfinPluginDouban/dist/Jellyfin.Plugin.Douban.2.2.0.0.zip",
+        "timestamp": "2024-05-21T14:12:22Z",
+        "version": "2.2.0.0"
+      },
+      {
+        "checksum": "68692C7FD4D7D1D34DBD2E8AFCC718E5",
+        "changelog": "- 增加了反向代理。\n- 优化了图片的获取方式。\n- 优化了对季数的解析。",
+        "targetAbi": "10.8.0.0",
+        "sourceUrl": "https://xzonn.top/JellyfinPluginDouban/dist/Jellyfin.Plugin.Douban.1.2.0.0.zip",
+        "timestamp": "2024-05-21T14:12:12Z",
+        "version": "1.2.0.0"
       }
     ]
   }
