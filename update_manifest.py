@@ -60,7 +60,7 @@ def main(basic_path: str):
       versions.append(
         {
           "checksum": md5sum.upper(),
-          "changelog": r"https://xzonn.top/posts/Jellyfin-Plugin-Douban.html#%E6%9B%B4%E6%96%B0%E6%97%A5%E5%BF%97",
+          "changelog": r"https://github.com/Xzonn/JellyfinPluginDouban/blob/master/ChangeLog.md",
           "targetAbi": f"10.{int(major) + 7}.0.0",
           "sourceUrl": f"https://xzonn.top/JellyfinPluginDouban/dist/{file_name}",
           "timestamp": (datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(minutes=int(major) - 1))
