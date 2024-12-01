@@ -184,13 +184,11 @@ public static class Helper
         if (info is EpisodeInfo episode)
         {
 #if NET8_0_OR_GREATER
-            var parentProviderIds = episode.SeasonProviderIds;
+            TryGetProviderId(episode.SeasonProviderIds, out id);
+            if (id == 0) { TryGetProviderId(episode.SeriesProviderIds, out id); }
 #else
-            var parentProviderIds = episode.SeriesProviderIds;
+            TryGetProviderId(episode.SeriesProviderIds, out id);
 #endif
-            int.TryParse(parentProviderIds.GetValueOrDefault(Constants.ProviderId), out id);
-            if (id == 0) { int.TryParse(parentProviderIds.GetValueOrDefault(Constants.ProviderId_Old), out id); }
-            if (id == 0) { int.TryParse(parentProviderIds.GetValueOrDefault(Constants.ProviderId_OpenDouban), out id); }
 
             if (id == 0)
             {
@@ -205,15 +203,11 @@ public static class Helper
         }
         else
         {
-            int.TryParse(info.GetProviderId(Constants.ProviderId), out id);
-            if (id == 0) { int.TryParse(info.GetProviderId(Constants.ProviderId_Old), out id); }
-            if (id == 0) { int.TryParse(info.GetProviderId(Constants.ProviderId_OpenDouban), out id); }
+            TryGetProviderId(info.ProviderIds, out id);
 
             if (id == 0 && info is SeasonInfo season && (season.IndexNumber == 1 || ignoreSeasonIndex))
             {
-                int.TryParse(season.SeriesProviderIds.GetValueOrDefault(Constants.ProviderId), out id);
-                if (id == 0) { int.TryParse(season.SeriesProviderIds.GetValueOrDefault(Constants.ProviderId_Old), out id); }
-                if (id == 0) { int.TryParse(season.SeriesProviderIds.GetValueOrDefault(Constants.ProviderId_OpenDouban), out id); }
+                TryGetProviderId(season.SeriesProviderIds, out id);
             }
         }
         if (id == 0 && info is ItemLookupInfo lookup && !string.IsNullOrEmpty(lookup.Path))
@@ -602,5 +596,13 @@ public static class Helper
         };
 
         return JsonSerializer.Serialize(dict, options: Constants.JsonSerializerOptions);
+    }
+
+    public static bool TryGetProviderId(Dictionary<string, string> dict, out int id)
+    {
+        int.TryParse(dict.GetValueOrDefault(Constants.ProviderId), out id);
+        if (id == 0) { int.TryParse(dict.GetValueOrDefault(Constants.ProviderId_Old), out id); }
+        if (id == 0) { int.TryParse(dict.GetValueOrDefault(Constants.ProviderId_OpenDouban), out id); }
+        return id != 0;
     }
 }
