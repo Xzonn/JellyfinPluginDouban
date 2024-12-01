@@ -51,6 +51,8 @@ public class SeasonProvider(DoubanApi api, ILogger<SeasonProvider> logger) : IRe
             PremiereDate = subject.ScreenTime,
             IndexNumber = subject.SeasonIndex,
         };
+        // Fix the issue where seasons may be empty if no subfolders was present
+        if (info.IsAutomated) { result.Item.IndexNumber = info.IndexNumber; }
         result.Item.SetProviderId(Constants.ProviderId, subject.Sid);
         if (!string.IsNullOrEmpty(subject.ImdbId)) { result.Item.SetProviderId(MetadataProvider.Imdb, subject.ImdbId); }
         result.QueriedById = true;
