@@ -9,6 +9,22 @@
     "imageUrl": "https://xzonn.top/JellyfinPluginDouban/Logo.png",
     "versions": [
       {
+        "checksum": "38D2585E0A4CCD88DDFA11116FF1DE97",
+        "changelog": "- 修复了不存在子文件夹时季数可能解析失败的问题。",
+        "targetAbi": "10.10.0.0",
+        "sourceUrl": "https://xzonn.top/JellyfinPluginDouban/dist/Jellyfin.Plugin.Douban.3.3.1.0.zip",
+        "timestamp": "2024-12-01T16:20:59Z",
+        "version": "3.3.1.0"
+      },
+      {
+        "checksum": "50B8B2772A2FDA44B3771E3C209DF633",
+        "changelog": "- 修复了不存在子文件夹时季数可能解析失败的问题。",
+        "targetAbi": "10.8.0.0",
+        "sourceUrl": "https://xzonn.top/JellyfinPluginDouban/dist/Jellyfin.Plugin.Douban.1.3.1.0.zip",
+        "timestamp": "2024-12-01T16:18:58Z",
+        "version": "1.3.1.0"
+      },
+      {
         "checksum": "2587D4D48F824C0DC60FF258DCCDE7DD",
         "changelog": "- 支持Jellyfin 10.10版本。\n- 修复了日期格式。",
         "targetAbi": "10.10.0.0",
