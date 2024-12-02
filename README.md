@@ -5,7 +5,9 @@
 
 相较于 [jellyfin-plugin-opendouban](https://github.com/caryyu/jellyfin-plugin-opendouban) 插件，本插件无需额外运行 Docker 容器。
 
-**[详细说明及更新日志](https://xzonn.top/posts/Jellyfin-Plugin-Douban.html)**
+**[详细说明及已知问题](https://xzonn.top/posts/Jellyfin-Plugin-Douban.html)**
+
+**[更新日志](ChangeLog.md)**
 
 ## 安装
 **注意**：Jellyfin 10.9.x 版本和 10.10.x 版本的插件互相不兼容。对于 Jellyfin 10.9.11 版本，请使用本插件的 2.x 版本；对于 Jellyfin 10.10.0 及以上版本，请使用本插件的 3.x 版本。
