@@ -9,6 +9,22 @@
     "imageUrl": "https://xzonn.top/JellyfinPluginDouban/Logo.png",
     "versions": [
       {
+        "checksum": "C2D115B282B4315DEC4DE742902D7BE5",
+        "changelog": "- 修复豆瓣节目类型与实际文件不一致的问题。 ([例](https://movie.douban.com/subject/35952098/))",
+        "targetAbi": "10.10.0.0",
+        "sourceUrl": "https://xzonn.top/JellyfinPluginDouban/dist/Jellyfin.Plugin.Douban.3.3.2.0.zip",
+        "timestamp": "2024-12-08T11:58:34Z",
+        "version": "3.3.2.0"
+      },
+      {
+        "checksum": "A705FE541F6CAE40C5A45874AFEDD423",
+        "changelog": "- 修复豆瓣节目类型与实际文件不一致的问题。 ([例](https://movie.douban.com/subject/35952098/))",
+        "targetAbi": "10.8.0.0",
+        "sourceUrl": "https://xzonn.top/JellyfinPluginDouban/dist/Jellyfin.Plugin.Douban.1.3.2.0.zip",
+        "timestamp": "2024-12-08T11:56:34Z",
+        "version": "1.3.2.0"
+      },
+      {
         "checksum": "38D2585E0A4CCD88DDFA11116FF1DE97",
         "changelog": "- 修复了不存在子文件夹时季数可能解析失败的问题。",
         "targetAbi": "10.10.0.0",
