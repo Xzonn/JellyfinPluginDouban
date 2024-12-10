@@ -110,6 +110,9 @@ namespace Jellyfin.Plugin.Douban.Test
         {
             var list = await _doubanApi.FetchMovieImages("33400537", "R");
             Assert.NotEmpty(list);
+            
+            list = await _doubanApi.FetchMovieImages("26816519", "S");
+            Assert.NotEmpty(list);
         }
     }
 }

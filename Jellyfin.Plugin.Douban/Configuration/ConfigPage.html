@@ -52,6 +52,11 @@
                                 <div class="fieldDescription">每两次请求之间的时间间隔（毫秒），建议在需要搜索大量数据时将此数值提高到 5000 及以上。</div>
                             </div>
                             <div class="inputContainer">
+                                <label class="inputLabel inputLabelUnfocused" for="Timeout">超时时间</label>
+                                <input id="Timeout" name="Timeout" type="number" is="emby-input" />
+                                <div class="fieldDescription">尝试获取请求的最长时间（毫秒），当剧照数量较多时（<a href="https://movie.douban.com/subject/26816519/photos?type=S">示例</a>）可尝试提高此数值以避免获取失败。</div>
+                            </div>
+                            <div class="inputContainer">
                                 <label class="inputLabel inputLabelUnfocused" for="ImageSortingMethod">图片排序方式</label>
                                 <select class="emby-select-withcolor emby-select" id="ImageSortingMethod" name="ImageSortingMethod" is="emby-select">
                                     <option value="Default">默认</option>

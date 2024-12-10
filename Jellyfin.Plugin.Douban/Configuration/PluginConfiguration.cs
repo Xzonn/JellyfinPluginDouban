@@ -21,6 +21,11 @@ public class PluginConfiguration : BasePluginConfiguration
     public int RequestTimeSpan { get; set; } = 2000;
 
     /// <summary>
+    /// 超时时间
+    /// </summary>
+    public int Timeout { get; set; } = 8000;
+
+    /// <summary>
     /// 图片排序方式
     /// </summary>
     public ImageSortingMethod ImageSortingMethod { get; set; } = ImageSortingMethod.Default;

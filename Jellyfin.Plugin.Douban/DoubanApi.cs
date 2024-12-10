@@ -46,7 +46,7 @@ public partial class DoubanApi
         _httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
         _httpClient.DefaultRequestHeaders.Add("Referer", "https://movie.douban.com/");
         _httpClient.DefaultRequestHeaders.Add("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8");
-        _httpClient.Timeout = TimeSpan.FromSeconds(5);
+        _httpClient.Timeout = TimeSpan.FromMilliseconds(Configuration.Timeout);
         _log = log;
         CacheLastClean = DateTime.Now;
         Caches = [];
@@ -114,11 +114,12 @@ public partial class DoubanApi
 
         if (searchResults.Count == 0)
         {
-            var names = new List<string?>();
-
+            var names = new List<string?>
+            {
+                info.GetProviderId(MetadataProvider.Imdb)
+            };
             if (info is EpisodeInfo episodeInfo)
             {
-                names.Add(info.GetProviderId(MetadataProvider.Imdb));
 #if NET8_0_OR_GREATER
                 names.Add(episodeInfo.SeasonProviderIds.GetValueOrDefault(MetadataProvider.Imdb.ToString()));
 #endif
@@ -128,7 +129,6 @@ public partial class DoubanApi
             }
             else
             {
-                names.Add(info.GetProviderId(MetadataProvider.Imdb));
                 if (info is SeasonInfo seasonInfo && isFirstSeason)
                 {
                     names.Add(seasonInfo.SeriesProviderIds.GetValueOrDefault(MetadataProvider.Imdb.ToString()));
@@ -402,15 +402,23 @@ public partial class DoubanApi
             message.Headers.Add("Cookie", Configuration.DoubanCookie);
         }
         _log.LogDebug("Getting url: {url}", url);
-        var response = await _httpClient.SendAsync(message, token).ConfigureAwait(false);
-        LastSearch = DateTime.Now;
-        if (!response.IsSuccessStatusCode)
+        try
         {
-            _log.LogError("Response: {code} {status}{content}", (int)response.StatusCode, response.StatusCode, response.StatusCode == System.Net.HttpStatusCode.Forbidden ? ", maybe you need to provide cookie" : "");
+            var response = await _httpClient.SendAsync(message, token).ConfigureAwait(false);
+            LastSearch = DateTime.Now;
+            if (!response.IsSuccessStatusCode)
+            {
+                _log.LogError("Response: {code} {status}{content}", (int)response.StatusCode, response.StatusCode, response.StatusCode == System.Net.HttpStatusCode.Forbidden ? ", maybe you need to provide cookie" : "");
+                return null;
+            }
+            var responseText = await response.Content.ReadAsStringAsync(token);
+            Caches[url] = new Cache() { content = responseText, time = DateTime.Now };
+            return responseText;
+        }
+        catch (TaskCanceledException tce)
+        {
+            _log.LogError(tce, "Request to {url} was canceled", url);
             return null;
         }
-        var responseText = await response.Content.ReadAsStringAsync(token);
-        Caches[url] = new Cache() { content = responseText, time = DateTime.Now };
-        return responseText;
     }
 }
