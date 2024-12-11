@@ -473,7 +473,7 @@ public static class Helper
                 Language = Constants.Language,
                 Type = distinguishUsingAspectRatio ? (width > height ? ImageType.Backdrop : ImageType.Primary) : imageType,
                 ThumbnailUrl = $"{cdnServer}/view/photo/s/public/{posterId}.jpg",
-                Url = $"{cdnServer}/view/photo/l/public/{posterId}.jpg",
+                Url = $"{cdnServer}/view/photo/raw/public/{posterId}.jpg",
                 Width = width,
                 Height = height,
                 CommunityRating = rating == 0 ? null : rating,
@@ -574,8 +574,8 @@ public static class Helper
             OriginalName = string.IsNullOrEmpty(originalName) ? name : originalName,
             Intro = intro,
             Gender = info!.GetValueOrDefault("性别", null),
-            Birthdate = string.IsNullOrEmpty(birthdate) ? null : DateTime.ParseExact(birthdate, "yyyy年M月d日", CultureInfo.InvariantCulture),
-            Deathdate = string.IsNullOrEmpty(deathdate) ? null : DateTime.ParseExact(deathdate, "yyyy年M月d日", CultureInfo.InvariantCulture),
+            Birthdate = TryParseDateTime(birthdate),
+            Deathdate = TryParseDateTime(deathdate),
             Birthplace = string.IsNullOrEmpty(bitrhplace) ? null : [bitrhplace],
             Website = info!.GetValueOrDefault("官方网站", null),
             ImdbId = info!.GetValueOrDefault("imdb编号", info!.GetValueOrDefault("IMDb编号", null)),
@@ -604,5 +604,32 @@ public static class Helper
         if (id == 0) { int.TryParse(dict.GetValueOrDefault(Constants.ProviderId_Old), out id); }
         if (id == 0) { int.TryParse(dict.GetValueOrDefault(Constants.ProviderId_OpenDouban), out id); }
         return id != 0;
+    }
+
+    public static DateTime? TryParseDateTime(string? date)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(date))
+            {
+                return null;
+            }
+            if (date.Contains('日'))
+            {
+                return DateTime.ParseExact(date, "yyyy年M月d日", CultureInfo.InvariantCulture);
+            }
+            else if (date.Contains('月'))
+            {
+                return DateTime.ParseExact(date, "yyyy年M月", CultureInfo.InvariantCulture);
+            }
+            else
+            {
+                return DateTime.ParseExact(date, "yyyy年", CultureInfo.InvariantCulture);
+            }
+        }
+        catch (FormatException)
+        {
+            return null;
+        }
     }
 }

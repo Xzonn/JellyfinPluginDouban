@@ -36,6 +36,13 @@ namespace Jellyfin.Plugin.Douban.Test
             }, new System.Threading.CancellationToken());
             Assert.True(result.HasMetadata);
             Assert.Equal("27215727", result.Item.GetProviderId(Constants.PersonageId));
+
+            result = await _provider.GetMetadata(new PersonLookupInfo
+            {
+                Name = "米村正二",
+            }, new System.Threading.CancellationToken());
+            Assert.True(result.HasMetadata);
+            Assert.Equal(1964, result.Item.PremiereDate?.Year);
         }
     }
 }
