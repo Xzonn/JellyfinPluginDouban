@@ -378,14 +378,19 @@ public static class Helper
                 var name = link?.InnerText.Trim().Split(" ")[0];
                 var cid = REGEX_CELEBRITY.Match(link?.Attributes["href"].Value ?? "")?.Groups[1].Value;
                 var pid = REGEX_PERSONAGE.Match(link?.Attributes["href"].Value ?? "")?.Groups[1].Value;
-                var posterUrl = REGEX_IMAGE_URL.Match(_.QuerySelector(".avatar")?.Attributes["style"].Value ?? "")?.Groups[1].Value;
-                if (!fetchCelebrityImages || (posterUrl ?? "").Contains("celebrity-default"))
+                string? posterUrl = null;
+                if (fetchCelebrityImages)
                 {
-                    posterUrl = null;
-                }
-                else
-                {
-                    posterUrl = REGEX_DOUBANIO_HOST.Replace(posterUrl!, cdnServer);
+                    var matches = REGEX_IMAGE_URL.Matches(_.QuerySelector(".avatar")?.Attributes["style"].Value ?? "");
+                    foreach (Match match in matches)
+                    {
+                        var url = match.Groups[1].Value;
+                        if (url.Contains("celebrity-default")) { continue; }
+                        if (url.Contains("personage-default")) { continue; }
+                        if (url.Contains("has_douban")) { continue; }
+                        posterUrl = REGEX_DOUBANIO_HOST.Replace(url, cdnServer);
+                        break;
+                    }
                 }
                 string[] roleText = _.QuerySelector(".role")?.InnerText.Trim().Split(" ") ?? [topType];
                 var type = roleText[0];

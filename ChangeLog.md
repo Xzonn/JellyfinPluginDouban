@@ -1,4 +1,7 @@
 ## 更新日志
+- v1.3.4、v3.3.4（2025-02-13）：
+  - 修复拥有豆瓣账号的演职员无法正常获取照片的问题。 ([comment](https://github.com/Xzonn/xzonn.github.io/discussions/22#discussioncomment-12182968))
+  - 修复生卒年月的解析问题。
 - v1.3.3、v3.3.3（2024-12-10）：
   - 修复剧照数量过多时可能导致超时的问题。 ([例](https://movie.douban.com/subject/26816519/photos?type=S))
 - v1.3.2、v3.3.2（2024-12-08）：
