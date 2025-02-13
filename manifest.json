@@ -9,6 +9,22 @@
     "imageUrl": "https://xzonn.top/JellyfinPluginDouban/Logo.png",
     "versions": [
       {
+        "checksum": "EF3FB328845854D7762F0463C5BCB726",
+        "changelog": "- 修复拥有豆瓣账号的演职员无法正常获取照片的问题。 ([comment](https://github.com/Xzonn/xzonn.github.io/discussions/22#discussioncomment-12182968))\n- 修复生卒年月的解析问题。",
+        "targetAbi": "10.10.0.0",
+        "sourceUrl": "https://xzonn.top/JellyfinPluginDouban/dist/Jellyfin.Plugin.Douban.3.3.4.0.zip",
+        "timestamp": "2025-02-13T11:13:12Z",
+        "version": "3.3.4.0"
+      },
+      {
+        "checksum": "6807649AE267F139E5212F4B69E69DC7",
+        "changelog": "- 修复拥有豆瓣账号的演职员无法正常获取照片的问题。 ([comment](https://github.com/Xzonn/xzonn.github.io/discussions/22#discussioncomment-12182968))\n- 修复生卒年月的解析问题。",
+        "targetAbi": "10.8.0.0",
+        "sourceUrl": "https://xzonn.top/JellyfinPluginDouban/dist/Jellyfin.Plugin.Douban.1.3.4.0.zip",
+        "timestamp": "2025-02-13T11:11:12Z",
+        "version": "1.3.4.0"
+      },
+      {
         "checksum": "070993B15AE22B9C49DA03174BA9070C",
         "changelog": "- 修复剧照数量过多时可能导致超时的问题。 ([例](https://movie.douban.com/subject/26816519/photos?type=S))",
         "targetAbi": "10.10.0.0",
