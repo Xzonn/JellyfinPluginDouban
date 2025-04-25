@@ -412,7 +412,14 @@ public partial class DoubanApi
                 return null;
             }
             var responseText = await response.Content.ReadAsStringAsync(token);
-            Caches[url] = new Cache() { content = responseText, time = DateTime.Now };
+            try
+            {
+                Caches[url] = new Cache() { content = responseText, time = DateTime.Now };
+            }
+            catch (IndexOutOfRangeException ioore)
+            {
+                _log.LogError(ioore, "Index was outside the bounds of the array.");
+            }
             return responseText;
         }
         catch (TaskCanceledException tce)
