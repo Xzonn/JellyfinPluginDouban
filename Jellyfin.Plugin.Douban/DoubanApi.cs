@@ -213,7 +213,7 @@ public partial class DoubanApi
             {
                 Name = _.Name,
                 SearchProviderName = _.OriginalName,
-                ImageUrl = string.IsNullOrEmpty(_.PosterId) ? "" : $"{Configuration.CdnServer}/view/photo/l/public/{_.PosterId}.jpg",
+                ImageUrl = string.IsNullOrEmpty(_.PosterId) ? "" : $"{Configuration.CdnServer}/view/photo/s_ratio_poster/public/{_.PosterId}.webp",
                 Overview = _.Intro,
                 ProductionYear = _.Year,
                 PremiereDate = _.ScreenTime,

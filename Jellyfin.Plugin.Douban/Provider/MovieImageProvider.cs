@@ -52,9 +52,9 @@ public class MovieImageProvider(DoubanApi api, ILogger<MovieImageProvider> logge
             {
                 ProviderName = Constants.PluginName,
                 Language = Constants.Language,
-                ThumbnailUrl = $"{Configuration.CdnServer}/view/photo/s/public/{subject.PosterId}.jpg",
+                ThumbnailUrl = $"{Configuration.CdnServer}/view/photo/s_ratio_poster/public/{subject.PosterId}.webp",
                 Type = ImageType.Primary,
-                Url = $"{Configuration.CdnServer}/view/photo/raw/public/{subject.PosterId}.jpg",
+                Url = $"{Configuration.CdnServer}/view/photo/l/public/{subject.PosterId}.webp",
             };
             images.Add(image);
         }
