@@ -1,4 +1,7 @@
 ## 更新日志
+- v1.3.5、v3.3.5（2025-05-10）：
+  - 修复豆瓣图片链接更改导致无法正常获取照片的问题。 ([#6](https://github.com/Xzonn/JellyfinPluginDouban/issues/6))
+  - 修复缓存可能导致报错的问题。
 - v1.3.4、v3.3.4（2025-02-13）：
   - 修复拥有豆瓣账号的演职员无法正常获取照片的问题。 ([comment](https://github.com/Xzonn/xzonn.github.io/discussions/22#discussioncomment-12182968))
   - 修复生卒年月的解析问题。
