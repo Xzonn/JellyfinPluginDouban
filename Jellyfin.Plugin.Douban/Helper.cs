@@ -472,11 +472,15 @@ public static class Helper
                     rating = width * height;
                     break;
             }
+            if (distinguishUsingAspectRatio && width > 0 && height > 0)
+            {
+                imageType = width > height ? ImageType.Backdrop : ImageType.Primary;
+            }
             return new RemoteImageInfo()
             {
                 ProviderName = Constants.PluginName,
                 Language = Constants.Language,
-                Type = distinguishUsingAspectRatio ? (width > height ? ImageType.Backdrop : ImageType.Primary) : imageType,
+                Type = imageType,
                 ThumbnailUrl = $"{cdnServer}/view/photo/s_ratio_poster/public/{posterId}.webp",
                 Url = $"{cdnServer}/view/photo/l/public/{posterId}.webp",
                 Width = width,

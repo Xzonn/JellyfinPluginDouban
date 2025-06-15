@@ -1,4 +1,7 @@
 ## 更新日志
+
+- v1.3.6、v3.3.6（2025-06-15）：
+  - 修复豆瓣不显示图片大小导致无法区分海报和背景图的问题。 ([comment](https://github.com/Xzonn/xzonn.github.io/discussions/22#discussioncomment-13472343))
 - v1.3.5、v3.3.5（2025-05-10）：
   - 修复豆瓣图片链接更改导致无法正常获取照片的问题。 ([#6](https://github.com/Xzonn/JellyfinPluginDouban/issues/6))
   - 修复缓存可能导致报错的问题。
