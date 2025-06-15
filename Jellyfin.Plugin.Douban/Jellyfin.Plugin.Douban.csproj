@@ -9,6 +9,7 @@
     <FileVersion>1.1.2.0</FileVersion>
     <Authors>Xzonn</Authors>
     <LangVersion>12.0</LangVersion>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
   </PropertyGroup>
 
   <ItemGroup>

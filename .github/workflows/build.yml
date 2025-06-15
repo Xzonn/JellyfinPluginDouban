@@ -31,16 +31,21 @@ jobs:
   build:
     strategy:
       matrix:
-        dotnet_version: [net6.0, net8.0]
+        dotnet_version: ['6.0', '8.0']
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ matrix.dotnet_version }}
+          cache: true
+          cache-dependency-path: Jellyfin.Plugin.Douban/packages.lock.json
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
       - name: Build and pack package
         env:
-          XZ_DOTNET_VERSION: ${{ matrix.dotnet_version }}
+          XZ_DOTNET_VERSION: net${{ matrix.dotnet_version }}
           XZ_PUBLISH: ${{ inputs.publish }}
           XZ_GITHUB_RUN: ${{ github.run_number }}
         run: |
@@ -48,5 +53,5 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: build-${{ matrix.dotnet_version }}
+          name: build-net${{ matrix.dotnet_version }}
           path: temp/*.zip
