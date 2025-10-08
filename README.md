@@ -10,8 +10,6 @@
 **[更新日志](ChangeLog.md)**
 
 ## 安装
-**注意**：Jellyfin 10.9.x 版本和 10.10.x 版本的插件互相不兼容。对于 Jellyfin 10.9.11 版本，请使用本插件的 2.x 版本；对于 Jellyfin 10.10.0 及以上版本，请使用本插件的 3.x 版本。
-
 ### 插件库
 - 打开控制台，选择`插件`→`存储库`→`添加`
 - 在`存储库 URL`处填入：`https://xzonn.top/JellyfinPluginDouban/manifest.json`

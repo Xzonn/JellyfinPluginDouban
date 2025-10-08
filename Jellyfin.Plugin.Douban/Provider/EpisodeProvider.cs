@@ -61,7 +61,7 @@ public class EpisodeProvider(DoubanApi api, ILogger<EpisodeProvider> logger) : I
             if (!string.IsNullOrEmpty(indexString)) { int.TryParse(indexString, out index); }
         }
         if (index == 0) { index = info.IndexNumber ?? 0; }
-        if (index == 0 || index > movie.EpisodeCount) { return result; }
+        if (index == 0 || (movie.EpisodeCount > 0 && index > movie.EpisodeCount)) { return result; }
 
         result.Item = new Episode()
         {
