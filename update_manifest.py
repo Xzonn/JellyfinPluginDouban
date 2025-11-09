@@ -6,7 +6,6 @@ import json
 import os
 import re
 import shutil
-
 from hashlib import md5
 
 FILE_NAME_PATTERN = re.compile(r"Jellyfin.Plugin.Douban.(\d+).(\d+).(\d+).(\d+).zip")
@@ -43,6 +42,7 @@ def main(basic_path: str):
   for dotnet_version in [
     "net6.0",
     "net8.0",
+    "net9.0",
   ]:
     path = f"{basic_path}/temp/build-{dotnet_version}"
     if not os.path.exists(path):
@@ -78,6 +78,8 @@ def main(basic_path: str):
     key = f"v{major}.{minor}.{patch}"
     if key in change_log:
       version["changelog"] = change_log[key]
+
+    version["changelog"] = f"**注意：此版本插件仅适用于 Jellyfin 10.{int(major) + 7}.0 及更高版本。**\n\n" + version["changelog"]
 
   versions.sort(key=lambda x: x["timestamp"], reverse=True)
 
