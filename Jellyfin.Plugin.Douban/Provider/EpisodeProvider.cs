@@ -77,6 +77,11 @@ public class EpisodeProvider(DoubanApi api, ILogger<EpisodeProvider> logger) : I
             result.Item.Overview = subject.Intro;
             result.Item.PremiereDate = subject.ScreenTime;
         }
+        if (Configuration.UseAutomaticalEpisodeTitles && string.IsNullOrEmpty(result.Item.Name))
+        {
+            result.Item.Name = $"第 {index} 集";
+            logger.LogDebug("Use automatical episode name as “第 {index} 集”", index);
+        }
         result.Item.SetProviderId(Constants.ProviderId, $"{movie.Sid}/episode/{index}");
         result.QueriedById = true;
         result.HasMetadata = true;

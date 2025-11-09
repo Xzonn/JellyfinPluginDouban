@@ -492,7 +492,7 @@ public static class Helper
         return results;
     }
 
-    public static ApiEpisodeSubject ParseMovieEpisode(string responseText, int index, bool useAutomaticalEpisodeTitles = DEFAULT_USE_AUTOMATICAL_EPISODE_TITLES)
+    public static ApiEpisodeSubject ParseMovieEpisode(string responseText)
     {
         var htmlDoc = new HtmlDocument();
         htmlDoc.LoadHtml(responseText);
@@ -508,7 +508,7 @@ public static class Helper
 
         var result = new ApiEpisodeSubject()
         {
-            Name = name == "暂无，欢迎添加" ? (useAutomaticalEpisodeTitles ? $"第 {index} 集" : null) : name,
+            Name = name == "暂无，欢迎添加" ? null : name,
             OriginalName = originalName == "暂无，欢迎添加" ? null : originalName,
             ScreenTime = screenTime == DateTime.MinValue ? null : screenTime,
             Intro = info!.GetValueOrDefault("剧情简介", "暂无，欢迎添加") == "暂无，欢迎添加" ? null : intro,

@@ -298,7 +298,7 @@ public partial class DoubanApi
         string? responseText = await FetchUrl(url, token);
         if (string.IsNullOrEmpty(responseText)) { return new ApiEpisodeSubject(); }
 
-        var result = Helper.ParseMovieEpisode(responseText, index);
+        var result = Helper.ParseMovieEpisode(responseText);
         _log.LogDebug("Episode {sid:l}/{index} is: {title}", sid, index, result.Name);
         return result;
     }
