@@ -4,14 +4,16 @@ import zipfile
 
 CSPROJ_PATH = "Jellyfin.Plugin.Douban/Jellyfin.Plugin.Douban.csproj"
 
-dotnet_version = os.environ.get("XZ_DOTNET_VERSION", "net8.0")
+dotnet_version = os.environ.get("XZ_DOTNET_VERSION", "net9.0")
 publish = os.environ.get("XZ_PUBLISH", "false").lower() == "true"
 github_run = int(os.environ.get("XZ_GITHUB_RUN", "0"))
 
 latest_tag = os.popen("git describe --tags --abbrev=0").read().strip().removeprefix("v") or "0.0.0"
 major, minor, patch = latest_tag.split(".", 2)
 
-if dotnet_version == "net8.0":
+if dotnet_version == "net9.0":
+  major = 4
+elif dotnet_version == "net8.0":
   major = 3
 elif dotnet_version == "net6.0":
   major = 1
