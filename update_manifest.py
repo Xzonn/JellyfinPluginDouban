@@ -75,7 +75,7 @@ def main(basic_path: str):
 
   for version in versions:
     major, minor, patch, revision = version["version"].split(".")
-    key = f"v{major}.{minor}.{patch}"
+    key = f"v4.{minor}.{patch}"
     if key in change_log:
       version["changelog"] = change_log[key]
 
