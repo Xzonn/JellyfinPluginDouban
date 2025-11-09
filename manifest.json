@@ -9,8 +9,24 @@
     "imageUrl": "https://xzonn.top/JellyfinPluginDouban/Logo.png",
     "versions": [
       {
+        "checksum": "1B105C2F78647371D4BB1B43F049B034",
+        "changelog": "- 修复自动生成单集名字配置项逻辑有误的问题。",
+        "targetAbi": "10.10.0.0",
+        "sourceUrl": "https://xzonn.top/JellyfinPluginDouban/dist/Jellyfin.Plugin.Douban.3.3.8.0.zip",
+        "timestamp": "2025-11-09T10:30:40Z",
+        "version": "3.3.8.0"
+      },
+      {
+        "checksum": "BEA7382E75EAAE45B7793D35ECE0BC03",
+        "changelog": "- 修复自动生成单集名字配置项逻辑有误的问题。",
+        "targetAbi": "10.8.0.0",
+        "sourceUrl": "https://xzonn.top/JellyfinPluginDouban/dist/Jellyfin.Plugin.Douban.1.3.8.0.zip",
+        "timestamp": "2025-11-09T10:28:40Z",
+        "version": "1.3.8.0"
+      },
+      {
         "checksum": "104CABB47640DBCAC8E610903701BDDA",
-        "changelog": "https://github.com/Xzonn/JellyfinPluginDouban/blob/master/ChangeLog.md",
+        "changelog": "- 修复单集信息获取的问题。",
         "targetAbi": "10.10.0.0",
         "sourceUrl": "https://xzonn.top/JellyfinPluginDouban/dist/Jellyfin.Plugin.Douban.3.3.7.0.zip",
         "timestamp": "2025-10-08T05:23:15Z",
@@ -18,7 +34,7 @@
       },
       {
         "checksum": "8E55D8B617196F6324EE2CFFA069A889",
-        "changelog": "https://github.com/Xzonn/JellyfinPluginDouban/blob/master/ChangeLog.md",
+        "changelog": "- 修复单集信息获取的问题。",
         "targetAbi": "10.8.0.0",
         "sourceUrl": "https://xzonn.top/JellyfinPluginDouban/dist/Jellyfin.Plugin.Douban.1.3.7.0.zip",
         "timestamp": "2025-10-08T05:21:15Z",
