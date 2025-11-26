@@ -49,6 +49,7 @@ public static class Helper
     private static Regex REGEX_DOUBAN_ATTRIBUTE => new(@"\[(?:douban|doubanid) *[-= ] *(\d+)\]");
     private static Regex REGEX_SPECIAL_FOLDER_NAME => new(@"^(?:SP|Special|Special Disk|CD|Scan|CM|PV|OAD|OVA|Font|Sub|Menu|Bonus|Extra|Trailer|Sample|NCOP|NCED|NCOP&NCED)s?$", RegexOptions.IgnoreCase);
     private static Regex REGEX_SPECIAL_FOLDER_NAME_JA => new(@"^(?:映像特典|特典|番外)");
+    private static Regex REGEX_NAME_WITH_YEAR => new(@"( *\((?:19\d{2}|2\d{3})\)| +(?:19\d{2}|2\d{3}))$");
 
     public static string? AnitomySharpParse(string name, ElementCategory category)
     {
@@ -291,7 +292,7 @@ public static class Helper
         if (!isMovie && isFirstSeason)
         {
             var first = results[0].Name!;
-            if (first != keyword)
+            if (first != REGEX_NAME_WITH_YEAR.Replace(keyword, ""))
             {
                 results = [.. results.OrderBy(_ => _.Name != first && first.StartsWith(_.Name!) ? 0 : 1)];
             }
