@@ -314,7 +314,8 @@ public static class Helper
         rating = string.IsNullOrEmpty(rating) ? "0.0" : rating;
         var info = content?.QuerySelector("#info")?.InnerText.Trim().Split("\n").Select(_ => _.Trim().Split(":", 2)).Where(_ => _.Length > 1).ToDictionary(_ => _[0], _ => HttpUtility.HtmlDecode(_[1].Trim())) ?? [];
         var type = "电影";
-        if (info.ContainsKey("集数") || info.ContainsKey("单集片长")) { type = "电视剧"; }
+        var recommendationsTitle = content?.QuerySelector("#recommendations h2")?.InnerText ?? "";
+        if (recommendationsTitle.Contains("喜欢这部剧集的人") || info.ContainsKey("集数") || info.ContainsKey("单集片长")) { type = "电视剧"; }
         var intro = string.Join("\n", (content?.QuerySelector("#link-report-intra span.all") ?? content?.QuerySelector("#link-report-intra span"))?.InnerText.Trim().Split("\n").Select(_ => _.Trim()) ?? []);
         var screenTime = info.GetValueOrDefault("上映日期", info.GetValueOrDefault("首播", "")).Split("/").Select(_ => REGEX_BRACKET.Replace(_.Trim(), "")).Where(_ => REGEX_DATE.IsMatch(_)).FirstOrDefault();
 
