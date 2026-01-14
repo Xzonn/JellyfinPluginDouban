@@ -85,7 +85,7 @@ body:
       label: 相关日志
       description: 请提供相关的日志输出（如果有）。您可以在 Jellyfin 控制台的日志部分找到。
       placeholder: 粘贴相关日志...
-      render: shell
+      render: text
     validations:
       required: false
       
