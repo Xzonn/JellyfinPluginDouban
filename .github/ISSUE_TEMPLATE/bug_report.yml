@@ -1,0 +1,99 @@
+name: 🐛 问题报告
+description: 报告插件使用过程中遇到的问题
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢您抽出时间填写此问题报告！请提供尽可能详细的信息，以帮助我们更快地定位和解决问题。
+        
+  - type: textarea
+    id: description
+    attributes:
+      label: 问题描述
+      description: 请清楚、简洁地描述您遇到的问题。
+      placeholder: 描述您遇到的问题...
+    validations:
+      required: true
+      
+  - type: textarea
+    id: steps-to-reproduce
+    attributes:
+      label: 复现步骤
+      description: 请提供能够复现此问题的详细步骤。
+      placeholder: |
+        1. 打开...
+        2. 点击...
+        3. 看到错误...
+    validations:
+      required: true
+      
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: 期望行为
+      description: 请描述您期望发生的行为。
+      placeholder: 描述您期望的正确行为...
+    validations:
+      required: true
+      
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: 实际行为
+      description: 请描述实际发生的行为。
+      placeholder: 描述实际发生了什么...
+    validations:
+      required: true
+      
+  - type: input
+    id: plugin-version
+    attributes:
+      label: 插件版本
+      description: 您使用的插件版本是什么？
+      placeholder: 例如：v1.0.0
+    validations:
+      required: true
+      
+  - type: input
+    id: jellyfin-version
+    attributes:
+      label: Jellyfin 版本
+      description: 您使用的 Jellyfin 版本是什么？
+      placeholder: 例如：10.8.13
+    validations:
+      required: true
+      
+  - type: dropdown
+    id: operating-system
+    attributes:
+      label: 操作系统
+      description: Jellyfin 服务器运行在什么操作系统上？
+      options:
+        - Windows
+        - Linux
+        - macOS
+        - Docker
+        - 其他
+    validations:
+      required: true
+      
+  - type: textarea
+    id: logs
+    attributes:
+      label: 相关日志
+      description: 请提供相关的日志输出（如果有）。您可以在 Jellyfin 控制台的日志部分找到。
+      placeholder: 粘贴相关日志...
+      render: shell
+    validations:
+      required: false
+      
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: 补充信息
+      description: 请提供任何其他有助于我们理解问题的信息、截图或配置。
+      placeholder: 其他相关信息...
+    validations:
+      required: false
