@@ -1,0 +1,87 @@
+name: 功能请求
+description: 建议新功能或改进现有功能
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢您提出功能建议！请提供尽可能详细的信息，帮助我们了解您的需求。
+
+  - type: textarea
+    id: feature-description
+    attributes:
+      label: 功能描述
+      description: 请清楚、简洁地描述您希望添加的功能。
+      placeholder: 描述您想要的功能...
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: 相关问题
+      description: 这个功能是为了解决什么问题？请描述您当前遇到的困扰。
+      placeholder: 例如：我在使用插件时总是需要...，这让我感到不便...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: 建议的解决方案
+      description: 请描述您希望如何实现这个功能。
+      placeholder: 例如：我希望能够在设置中添加一个选项，让用户可以...
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 替代方案
+      description: 请描述您考虑过的其他解决方案或功能实现方式。
+      placeholder: 描述其他可能的实现方式...
+    validations:
+      required: false
+
+  - type: textarea
+    id: use-case
+    attributes:
+      label: 使用场景
+      description: 请描述您会在什么情况下使用这个功能。
+      placeholder: 例如：当我整理我的电影库时，我需要...
+    validations:
+      required: false
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: 优先级
+      description: 这个功能对您来说有多重要？
+      options:
+        - 非常重要（必需功能）
+        - 重要（显著改善使用体验）
+        - 一般（锦上添花）
+        - 不急（可有可无）
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: willingness
+    attributes:
+      label: 参与贡献
+      description: 您是否愿意帮助实现这个功能？
+      options:
+        - label: 我愿意提交 Pull Request 来实现这个功能
+          required: false
+        - label: 我可以提供测试和反馈
+          required: false
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: 补充信息
+      description: 请提供任何其他有助于我们理解这个功能请求的信息、截图或参考资料。
+      placeholder: 其他相关信息...
+    validations:
+      required: false
