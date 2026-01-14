@@ -1,8 +1,8 @@
 blank_issues_enabled: true
 contact_links:
-  - name: 📖 详细说明及已知问题
+  - name: 详细说明及已知问题
     url: https://xzonn.top/posts/Jellyfin-Plugin-Douban.html
     about: 查看插件的详细使用说明和已知问题
-  - name: 💬 讨论区
-    url: https://github.com/Xzonn/JellyfinPluginDouban/discussions
+  - name: 讨论区
+    url: https://github.com/Xzonn/xzonn.github.io/discussions/22
     about: 如果您有问题想要讨论，请前往讨论区

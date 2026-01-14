@@ -1,4 +1,4 @@
-name: 🐛 问题报告
+name: 问题报告
 description: 报告插件使用过程中遇到的问题
 title: "[Bug]: "
 labels: ["bug"]
@@ -7,7 +7,7 @@ body:
     attributes:
       value: |
         感谢您抽出时间填写此问题报告！请提供尽可能详细的信息，以帮助我们更快地定位和解决问题。
-        
+
   - type: textarea
     id: description
     attributes:
@@ -16,7 +16,7 @@ body:
       placeholder: 描述您遇到的问题...
     validations:
       required: true
-      
+
   - type: textarea
     id: steps-to-reproduce
     attributes:
@@ -28,7 +28,7 @@ body:
         3. 看到错误...
     validations:
       required: true
-      
+
   - type: textarea
     id: expected-behavior
     attributes:
@@ -37,7 +37,7 @@ body:
       placeholder: 描述您期望的正确行为...
     validations:
       required: true
-      
+
   - type: textarea
     id: actual-behavior
     attributes:
@@ -46,7 +46,7 @@ body:
       placeholder: 描述实际发生了什么...
     validations:
       required: true
-      
+
   - type: input
     id: plugin-version
     attributes:
@@ -55,7 +55,7 @@ body:
       placeholder: 例如：v1.0.0
     validations:
       required: true
-      
+
   - type: input
     id: jellyfin-version
     attributes:
@@ -64,7 +64,7 @@ body:
       placeholder: 例如：10.8.13
     validations:
       required: true
-      
+
   - type: dropdown
     id: operating-system
     attributes:
@@ -78,7 +78,7 @@ body:
         - 其他
     validations:
       required: true
-      
+
   - type: textarea
     id: logs
     attributes:
@@ -88,7 +88,7 @@ body:
       render: text
     validations:
       required: false
-      
+
   - type: textarea
     id: additional-context
     attributes:

@@ -1,4 +1,4 @@
-name: ✨ 功能请求
+name: 功能请求
 description: 建议新功能或改进现有功能
 title: "[Feature]: "
 labels: ["enhancement"]
@@ -7,7 +7,7 @@ body:
     attributes:
       value: |
         感谢您提出功能建议！请提供尽可能详细的信息，帮助我们了解您的需求。
-        
+
   - type: textarea
     id: feature-description
     attributes:
@@ -16,7 +16,7 @@ body:
       placeholder: 描述您想要的功能...
     validations:
       required: true
-      
+
   - type: textarea
     id: problem
     attributes:
@@ -25,7 +25,7 @@ body:
       placeholder: 例如：我在使用插件时总是需要...，这让我感到不便...
     validations:
       required: true
-      
+
   - type: textarea
     id: solution
     attributes:
@@ -34,7 +34,7 @@ body:
       placeholder: 例如：我希望能够在设置中添加一个选项，让用户可以...
     validations:
       required: true
-      
+
   - type: textarea
     id: alternatives
     attributes:
@@ -43,7 +43,7 @@ body:
       placeholder: 描述其他可能的实现方式...
     validations:
       required: false
-      
+
   - type: textarea
     id: use-case
     attributes:
@@ -52,7 +52,7 @@ body:
       placeholder: 例如：当我整理我的电影库时，我需要...
     validations:
       required: false
-      
+
   - type: dropdown
     id: priority
     attributes:
@@ -65,7 +65,7 @@ body:
         - 不急（可有可无）
     validations:
       required: false
-      
+
   - type: checkboxes
     id: willingness
     attributes:
@@ -76,7 +76,7 @@ body:
           required: false
         - label: 我可以提供测试和反馈
           required: false
-          
+
   - type: textarea
     id: additional-context
     attributes:
