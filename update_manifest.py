@@ -79,7 +79,8 @@ def main(basic_path: str):
     if key in change_log:
       version["changelog"] = change_log[key]
 
-    version["changelog"] = f"**注意：此版本插件仅适用于 Jellyfin 10.{int(major) + 7}.0 及更高版本。**\n\n" + version["changelog"]
+    if "注意：此版本插件仅适用于" not in version["changelog"]:
+      version["changelog"] = f"**注意：此版本插件仅适用于 Jellyfin 10.{int(major) + 7}.0 及更高版本。**\n\n" + version["changelog"]
 
   versions.sort(key=lambda x: x["timestamp"], reverse=True)
 
