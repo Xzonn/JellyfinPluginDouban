@@ -9,6 +9,30 @@
     "imageUrl": "https://xzonn.top/JellyfinPluginDouban/Logo.png",
     "versions": [
       {
+        "checksum": "EAC72C951ECB10CDE164F54FF4B06CBA",
+        "changelog": "**注意：此版本插件仅适用于 Jellyfin 10.11.0 及更高版本。**\n\n- 添加在系列信息中去除“第一季”的名字的选项。 ([#9](https://github.com/Xzonn/JellyfinPluginDouban/issues/9))",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://xzonn.top/JellyfinPluginDouban/dist/Jellyfin.Plugin.Douban.4.4.3.0.zip",
+        "timestamp": "2026-01-23T13:03:20Z",
+        "version": "4.4.3.0"
+      },
+      {
+        "checksum": "15FBECD3C9B877E110A51F6ED15DF646",
+        "changelog": "**注意：此版本插件仅适用于 Jellyfin 10.10.0 及更高版本。**\n\n- 添加在系列信息中去除“第一季”的名字的选项。 ([#9](https://github.com/Xzonn/JellyfinPluginDouban/issues/9))",
+        "targetAbi": "10.10.0.0",
+        "sourceUrl": "https://xzonn.top/JellyfinPluginDouban/dist/Jellyfin.Plugin.Douban.3.4.3.0.zip",
+        "timestamp": "2026-01-23T13:02:20Z",
+        "version": "3.4.3.0"
+      },
+      {
+        "checksum": "2C2BD1FB677E21B7B682184B6A99337A",
+        "changelog": "**注意：此版本插件仅适用于 Jellyfin 10.8.0 及更高版本。**\n\n- 添加在系列信息中去除“第一季”的名字的选项。 ([#9](https://github.com/Xzonn/JellyfinPluginDouban/issues/9))",
+        "targetAbi": "10.8.0.0",
+        "sourceUrl": "https://xzonn.top/JellyfinPluginDouban/dist/Jellyfin.Plugin.Douban.1.4.3.0.zip",
+        "timestamp": "2026-01-23T13:00:20Z",
+        "version": "1.4.3.0"
+      },
+      {
         "checksum": "3A311DEADB7B9A9E528C23F59A429F83",
         "changelog": "**注意：此版本插件仅适用于 Jellyfin 10.11.0 及更高版本。**\n\n- 修复“电影”与“剧集”的判断逻辑。",
         "targetAbi": "10.11.0.0",
