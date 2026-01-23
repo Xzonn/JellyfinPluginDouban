@@ -23,9 +23,9 @@ namespace Jellyfin.Plugin.Douban.Test
         {
             var result = await _provider.GetMetadata(new SeriesInfo
             {
-                Name = "民王",
-                Path = Path.Combine(Path.GetTempPath(), "民王 (2015)"),
-                Year = 2015,
+                Name = "小林家的龙女仆S (2021)",
+                Path = Path.Combine(Path.GetTempPath(), "小林家的龙女仆S (2021)"),
+                // Year = null,
                 IsAutomated = true,
             }, new System.Threading.CancellationToken());
             Assert.True(result.HasMetadata);

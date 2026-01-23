@@ -18,4 +18,5 @@ public class ApiMovieSubject
     public string? Intro { get; set; }
     public int SeasonIndex { get; set; }
     public int EpisodeCount { get; set; }
+    public string? SeriesKey { get; set; }
 }

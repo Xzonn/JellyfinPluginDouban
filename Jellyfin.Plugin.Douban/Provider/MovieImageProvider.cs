@@ -44,7 +44,7 @@ public class MovieImageProvider(DoubanApi api, ILogger<MovieImageProvider> logge
             return images;
         }
 
-        var subject = await api.FetchMovie(id.ToString(), token);
+        var subject = await api.FetchMovie(id.ToString(), false, token);
 
         if (!string.IsNullOrEmpty(subject.PosterId))
         {

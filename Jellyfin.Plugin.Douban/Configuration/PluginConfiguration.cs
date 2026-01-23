@@ -56,6 +56,11 @@ public class PluginConfiguration : BasePluginConfiguration
     public bool ForceSeriesAsFirstSeason { get; set; } = Helper.DEFAULT_FORCE_SERIES_AS_FIRST_SEASON;
 
     /// <summary>
+    /// 在系列信息中去除“第一季”的名字
+    /// </summary>
+    public bool RemoveFirstSeasonInSeriesName { get; set; } = Helper.DEFAULT_REMOVE_FIRST_SEASON_IN_SERIES_NAME;
+
+    /// <summary>
     /// 采用豆瓣的单集信息
     /// </summary>
     public bool UseEpisodeInformation { get; set; } = Helper.DEFAULT_USE_EPISODE_INFORMATION;

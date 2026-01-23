@@ -86,7 +86,7 @@ public partial class DoubanApi
             int id = Helper.ParseDoubanId(info);
             if (id != 0)
             {
-                var subject = await FetchMovie(id.ToString(), token);
+                var subject = await FetchMovie(id.ToString(), info is SeriesInfo, token);
                 if (subject != null)
                 {
                     searchResults.Add(subject);
@@ -142,7 +142,7 @@ public partial class DoubanApi
                     var parentId = Helper.ParseDoubanId(info, true);
                     if (parentId != 0)
                     {
-                        var subject = await FetchMovie(parentId.ToString(), token);
+                        var subject = await FetchMovie(parentId.ToString(), info is SeriesInfo, token);
                         if (!string.IsNullOrWhiteSpace(subject.Name))
                         {
                             names.Add(Helper.ReplaceSeasonIndexWith(subject.Name, season));
@@ -218,21 +218,35 @@ public partial class DoubanApi
                 ProductionYear = _.Year,
                 PremiereDate = _.ScreenTime,
             };
-            result.SetProviderId(Constants.ProviderId, _.Sid);
+            if (!string.IsNullOrEmpty(_.Sid))
+            {
+                result.SetProviderId(Constants.ProviderId, _.Sid);
+            }
             if (!string.IsNullOrEmpty(_.ImdbId)) { result.SetProviderId(MetadataProvider.Imdb, _.ImdbId); }
             return result;
         }).ToList();
         return results;
     }
 
-    public async Task<ApiMovieSubject> FetchMovie(string sid, CancellationToken token = default)
+    public async Task<ApiMovieSubject> FetchMovie(string sid, bool isSeries = false, CancellationToken token = default)
     {
         _log.LogDebug("Fetching movie: {sid}", sid);
         string url = $"https://movie.douban.com/subject/{sid}/";
         string? responseText = await FetchUrl(url, token);
         if (string.IsNullOrEmpty(responseText)) { return new(); }
 
-        var result = Helper.ParseMovie(responseText, sid);
+        var removeFirstSeasonInName = isSeries && Configuration.RemoveFirstSeasonInSeriesName;
+
+        var result = Helper.ParseMovie(responseText, sid, removeFirstSeasonInName);
+        if (removeFirstSeasonInName && !string.IsNullOrEmpty(result.SeriesKey))
+        {
+            string url2 = $"https://movie.douban.com/series/{result.SeriesKey}/";
+            string? responseText2 = await FetchUrl(url2, token);
+            if (!string.IsNullOrEmpty(responseText2))
+            {
+                result.Name = Helper.ParseSeriesName(responseText2);
+            }
+        }
         _log.LogDebug("Sid {sid} is: {name}", sid, result.Name);
         return result;
     }
@@ -255,7 +269,7 @@ public partial class DoubanApi
             return new ApiMovieSubject();
         }
 
-        return await FetchMovie(subjectId.ToString(), token);
+        return await FetchMovie(subjectId.ToString(), info is SeriesInfo, token);
     }
 
     public async Task<List<PersonInfo>> FetchMovieCelebrities(string sid, CancellationToken token = default)

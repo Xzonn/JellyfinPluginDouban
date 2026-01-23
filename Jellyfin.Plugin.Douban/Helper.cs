@@ -28,6 +28,7 @@ public static class Helper
     public const bool DEFAULT_FETCH_CELEBRITY_IMAGES = true;
     public const bool DEFAULT_OPTIMIZE_FOR_FIRST_SEASON = true;
     public const bool DEFAULT_FORCE_SERIES_AS_FIRST_SEASON = false;
+    public const bool DEFAULT_REMOVE_FIRST_SEASON_IN_SERIES_NAME = false;
     public const bool DEFAULT_USE_EPISODE_INFORMATION = true;
     public const bool DEFAULT_USE_AUTOMATICAL_EPISODE_TITLES = true;
 
@@ -40,6 +41,7 @@ public static class Helper
     private static Regex REGEX_DATE => new(@"\d{4}-\d\d-\d\d");
     private static Regex REGEX_CELEBRITY => new(@"/celebrity/(\d+)/");
     private static Regex REGEX_PERSONAGE => new(@"/personage/(\d+)/");
+    private static Regex REGEX_SERIES => new(@"'https://movie.douban.com/series/([^\s/]+)'");
     private static Regex REGEX_DOUBANIO_HOST => new(@"https?://img\d+\.doubanio.com");
     private static Regex REGEX_SEASON => new(@" *第(?<season>[一二三四五六七八九十百千万\d]+)[季期部]| *\b(?:Season +|S0*)(?<season>\d+)", RegexOptions.IgnoreCase);
     private static Regex REGEX_SEASON_2 => new(@"(?<![A-Za-z\d\.']|女神异闻录|Part +)(?<season>[0-2]?\d)$", RegexOptions.IgnoreCase);
@@ -50,6 +52,7 @@ public static class Helper
     private static Regex REGEX_SPECIAL_FOLDER_NAME => new(@"^(?:SP|Special|Special Disk|CD|Scan|CM|PV|OAD|OVA|Font|Sub|Menu|Bonus|Extra|Trailer|Sample|NCOP|NCED|NCOP&NCED)s?$", RegexOptions.IgnoreCase);
     private static Regex REGEX_SPECIAL_FOLDER_NAME_JA => new(@"^(?:映像特典|特典|番外)");
     private static Regex REGEX_NAME_WITH_YEAR => new(@"( *\((?:19\d{2}|2\d{3})\)| +(?:19\d{2}|2\d{3}))$");
+    private static Regex REGEX_SERIES_DOUBAN_POSTFIX => new(@" \(系列\) \(\d+\) \(豆瓣\)$");
 
     public static string? AnitomySharpParse(string name, ElementCategory category)
     {
@@ -88,7 +91,6 @@ public static class Helper
         }
         return result;
     }
-
 
     // https://stackoverflow.com/questions/14900228/roman-numerals-to-integers
     // Credit: David DeMar
@@ -300,7 +302,7 @@ public static class Helper
         return results;
     }
 
-    public static ApiMovieSubject ParseMovie(string responseText, string sid)
+    public static ApiMovieSubject ParseMovie(string responseText, string sid, bool removeFirstSeasonInName)
     {
         var htmlDoc = new HtmlDocument();
         htmlDoc.LoadHtml(responseText);
@@ -317,7 +319,7 @@ public static class Helper
         var recommendationsTitle = content?.QuerySelector("#recommendations h2")?.InnerText ?? "";
         if (recommendationsTitle.Contains("喜欢这部剧集的人") || info.ContainsKey("集数") || info.ContainsKey("单集片长")) { type = "电视剧"; }
         var intro = string.Join("\n", (content?.QuerySelector("#link-report-intra span.all") ?? content?.QuerySelector("#link-report-intra span"))?.InnerText.Trim().Split("\n").Select(_ => _.Trim()) ?? []);
-        var screenTime = info.GetValueOrDefault("上映日期", info.GetValueOrDefault("首播", "")).Split("/").Select(_ => REGEX_BRACKET.Replace(_.Trim(), "")).Where(_ => REGEX_DATE.IsMatch(_)).FirstOrDefault();
+        var screenTime = info.GetValueOrDefault("上映日期", info.GetValueOrDefault("首播", "")).Split("/").Select(_ => REGEX_BRACKET.Replace(_.Trim(), "")).FirstOrDefault(_ => REGEX_DATE.IsMatch(_));
 
         var otherNames = info.GetValueOrDefault("又名", "").Split("/").Select(_ => _.Trim());
         var seasonIndex = 0;
@@ -341,6 +343,15 @@ public static class Helper
             if (seasonIndex == 0) { seasonIndex = 1; }
         }
         int.TryParse(info.GetValueOrDefault("集数", "0"), out var episodeCount);
+        var seriesKey = REGEX_SERIES.Match(responseText)?.Groups[1].Value;
+        if (removeFirstSeasonInName)
+        {
+            name = REGEX_SEASON.Replace(name, "");
+            if (!string.IsNullOrEmpty(originalName))
+            {
+                originalName = REGEX_SEASON.Replace(originalName, "");
+            }
+        }
 
         var result = new ApiMovieSubject()
         {
@@ -359,6 +370,7 @@ public static class Helper
             ImdbId = info!.GetValueOrDefault("IMDb", null),
             SeasonIndex = seasonIndex,
             EpisodeCount = episodeCount,
+            SeriesKey = seriesKey,
         };
         result.Tags = result.Genres?.ToArray();
         return result;
@@ -448,6 +460,16 @@ public static class Helper
                 _ => null,
             };
         }
+    }
+
+    public static string ParseSeriesName(string responseText)
+    {
+        var htmlDoc = new HtmlDocument();
+        htmlDoc.LoadHtml(responseText);
+
+        var name = HttpUtility.HtmlDecode(REGEX_SERIES_DOUBAN_POSTFIX.Replace(htmlDoc.QuerySelector("title").InnerText.Trim(), ""));
+
+        return name;
     }
 
     public static List<RemoteImageInfo> ParseImages(string responseText, string cdnServer, ImageSortingMethod method = ImageSortingMethod.Default) => ParseImages(responseText, ImageType.Primary, DEFAULT_DISTINGUISH_USING_ASPECT_RATIO, cdnServer, method);
